@@ -7,9 +7,10 @@
   "authors": [{ "name": "BdGM" }],
   "license": "MIT",
   "esmodules": ["main.js"],
-  "url": "https://github.com/BdGM/nova-multiai",
-  "manifest": "https://raw.githubusercontent.com/BdGM/nova-multiai/main/module.json",
-  "download": "https://github.com/BdGM/nova-multiai/releases/download/v0.1.0/nova-multiai-v0.1.0.zip",
+ "url": "https://github.com/B4GM/nova-multiai",
+"manifest": "https://raw.githubusercontent.com/B4GM/nova-multiai/main/module.json",
+"download": "https://github.com/B4GM/nova-multiai/releases/download/v0.1.0/nova-multiai-v0.1.0.zip"
+
   "relationships": {
     "recommends": [
       {
