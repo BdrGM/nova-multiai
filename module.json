@@ -4,12 +4,12 @@
   "description": "Up to 8 AI identities with unique prompts, name triggers, per-user access, and ElevenLabs TTS routed only to authorized listeners. Optional Chat Portrait support for actor images.",
   "version": "0.1.0",
   "compatibility": { "minimum": "13", "verified": "13" },
-  "authors": [{ "name": "BdGM" }],
+  "authors": [{ "name": "BdGM", "url": "https://github.com/BdGM" }]
   "license": "MIT",
   "esmodules": ["main.js"],
-  "url": "https://github.com/B4GM/nova-multiai",
-  "manifest": "https://raw.githubusercontent.com/B4GM/nova-multiai/main/module.json",
-  "download": "https://github.com/B4GM/nova-multiai/releases/download/v0.1.0/nova-multiai-v0.1.0.zip"
+  "url": "https://github.com/BdGM/nova-multiai"
+  "manifest": "https://raw.githubusercontent.com/BdGM/nova-multiai/main/module.json"
+  "download": "https://github.com/BdGM/nova-multiai/releases/download/v0.1.0/nova-multiai-v0.1.0.zip"
   "relationships": {
     "recommends": [
       {
