@@ -1,1 +1,2 @@
 # nova-multiai
+“Author: BdGM”
