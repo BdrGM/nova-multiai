@@ -1,0 +1,23 @@
+{
+  "id": "nova-multiai",
+  "title": "NOVA Multi-AI (Chat + TTS)",
+  "description": "Up to 8 AI identities with unique prompts, name triggers, per-user access, and ElevenLabs TTS routed only to authorized listeners. Optional Chat Portrait support for actor images.",
+  "version": "0.1.0",
+  "compatibility": { "minimum": "13", "verified": "13" },
+  "authors": [{ "name": "<YOUR_NAME>" }],
+  "license": "MIT",
+  "esmodules": ["main.js"],
+  "url": "https://github.com/<YOUR_GITHUB_USERNAME>/nova-multiai",
+  "manifest": "https://raw.githubusercontent.com/<YOUR_GITHUB_USERNAME>/nova-multiai/main/module.json",
+  "download": "https://github.com/<YOUR_GITHUB_USERNAME>/nova-multiai/releases/download/v0.1.0/nova-multiai-v0.1.0.zip",
+  "relationships": {
+    "recommends": [
+      {
+        "id": "chat-portrait",
+        "type": "module",
+        "manifest": "https://raw.githubusercontent.com/ShoyuVanilla/FoundryVTT-Chat-Portrait/master/module.json",
+        "reason": "Shows AI portrait/name in chat bubbles."
+      }
+    ]
+  }
+}
