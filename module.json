@@ -7,7 +7,7 @@
   "license": "MIT",
   "esmodules": ["main.js"],
   "icon": "https://raw.githubusercontent.com/BdrGM/nova-multiai/main/assets/nova-icon-512.png",
-  "readme": "https://raw.githubusercontent.com/BdrGM/nova-multiai/main/README.md"
+  "readme": "https://raw.githubusercontent.com/BdrGM/nova-multiai/main/README.md",
 
   "url": "https://github.com/BdrGM/nova-multiai",
   "manifest": "https://raw.githubusercontent.com/BdrGM/nova-multiai/main/module.json",
