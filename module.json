@@ -9,7 +9,7 @@
 
   "url": "https://github.com/BdrGM/nova-multiai",
   "manifest": "https://raw.githubusercontent.com/BdrGM/nova-multiai/main/module.json",
-  "download": "https://github.com/BdrGM/nova-multiai/archive/refs/heads/main.zip",
+  "download": "https://github.com/BdrGM/nova-multiai/releases/download/v0.1.3/nova-multiai-v0.1.3.zip",
 
   "relationships": {
     "recommends": [
