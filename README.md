@@ -163,3 +163,4 @@ Releases: https://github.com/BdrGM/nova-multiai/releases
 
 # nova-multiai
 “Author: BdGM”
+![Total downloads](https://img.shields.io/github/downloads/BdrGM/nova-multiai/total)
