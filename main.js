@@ -322,7 +322,7 @@ Hooks.once("ready", () => {
     }
 
     if (raw.toLowerCase() === "/novaself") {
-      const b64="UklGRlgAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAIAAAAAP//////////AP///wAA////AAD///7/////AAAA////AP////////8AAP///wAA//////////////////////////8A";
+      const b64="UklGRlgAAABXQVZFZm10 IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAIAAAAAP//////////AP///wAA////AAD///7/////AAAA////AP////////8AAP///wAA//////////////////////////8A".replace(/\s+/g,"");
       const mime="audio/wav"; const dataUrl=`data:${mime};base64,${b64}`;
       try { const a=new Audio(dataUrl); a.volume=1.0; a.play().then(()=>console.log("NOVA | /novaself local HTML5 played")).catch(e=>console.warn("NOVA | /novaself local HTML5 failed:",e)); } catch(e){ console.warn("NOVA | /novaself local HTML5 threw:",e); }
       if (window.novaEnqueue) window.novaEnqueue({ b64, mime });
@@ -356,4 +356,51 @@ Hooks.once("ready", () => {
     handleWhisper(target,body,chatData.user);
     return false;
   });
+});
+
+/* ---------- NOVA: force big textareas for Prompt & Knowledge in Settings ---------- */
+Hooks.once("ready", () => {
+
+  // Replace the two single-line inputs with resizable textareas
+  const upgradeToTextAreas = (rootEl) => {
+    const selector = [
+      'input[name^="nova-multiai.ai"][name$="Prompt"]',
+      'input[name^="nova-multiai.ai"][name$="Knowledge"]'
+    ].join(",");
+
+    (rootEl.querySelectorAll ? rootEl.querySelectorAll(selector) : [])
+      .forEach((inp) => {
+        if (!inp || inp.tagName === "TEXTAREA") return;
+
+        const ta = document.createElement("textarea");
+        ta.name = inp.name;
+        ta.value = inp.value ?? "";
+        ta.rows = 8;
+        ta.style.width = "100%";
+        ta.style.minHeight = "140px";
+        ta.style.resize = "vertical";
+
+        // Swap in the textarea
+        inp.replaceWith(ta);
+
+        // Make the row stretch so the textarea gets room
+        const row = ta.closest(".form-group");
+        if (row) {
+          row.style.alignItems = "stretch";
+          const label = row.querySelector("label");
+          if (label) label.style.paddingTop = "6px";
+          const notes = row.querySelector(".notes");
+          if (notes) notes.style.marginTop = "6px";
+        }
+      });
+  };
+
+  // 1) When the Settings sheet first renders
+  Hooks.on("renderSettingsConfig", (_app, html) => {
+    if (html && html[0]) upgradeToTextAreas(html[0]);
+  });
+
+  // 2) And watch for any later re-renders by themes/systems
+  const observer = new MutationObserver(() => upgradeToTextAreas(document));
+  observer.observe(document.body, { childList: true, subtree: true });
 });
