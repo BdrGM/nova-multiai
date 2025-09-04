@@ -16,6 +16,10 @@ Perfect for **ship AIs** (sci‑fi), **familiars** or **patrons/gods** (fantasy)
 [![Downloads](https://img.shields.io/github/downloads/BdrGM/nova-multiai/total?style=flat-square&label=downloads)](https://github.com/BdrGM/nova-multiai/releases)
 ![Requires](https://img.shields.io/badge/Requires-SocketLib-blue?style=flat-square)
 ![Recommends](https://img.shields.io/badge/Recommends-Chat%20Portrait-lightgrey?style=flat-square)
+[![Stars](https://img.shields.io/github/stars/BdrGM/nova-multiai?style=flat-square)](https://github.com/BdrGM/nova-multiai/stargazers)
+[![Issues](https://img.shields.io/github/issues/BdrGM/nova-multiai?style=flat-square)](https://github.com/BdrGM/nova-multiai/issues)
+[![Last commit](https://img.shields.io/github/last-commit/BdrGM/nova-multiai?style=flat-square)](https://github.com/BdrGM/nova-multiai/commits/main)
+
 
 ---
 
