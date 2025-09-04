@@ -10,12 +10,12 @@ Perfect for **ship AIs** (sci‑fi), **familiars** or **patrons/gods** (fantasy)
 
 
 
-[![Release](https://img.shields.io/github/v/release/BdrGM/nova-multiai?logo=github)](https://github.com/BdrGM/nova-multiai/releases)
-![Foundry v13](https://img.shields.io/badge/Foundry-v13-orange)
-[![Downloads](https://img.shields.io/github/downloads/BdGM/nova-multiai/total?style=flat-square&color=informational)](https://github.com/BdGM/nova-multiai/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
-[![Requires: SocketLib](https://img.shields.io/badge/Requires-SocketLib-blue)](https://raw.githubusercontent.com/manuelVo/foundryvtt-socketlib/v1.1.3/module.json)
-[![Recommends: Chat Portrait](https://img.shields.io/badge/Recommends-Chat%20Portrait-lightgrey)](https://raw.githubusercontent.com/ShoyuVanilla/FoundryVTT-Chat-Portrait/master/module.json)
+[![release](https://img.shields.io/github/v/release/BdrGM/nova-multiai?style=flat-square&display_name=tag&sort=semver)](https://github.com/BdrGM/nova-multiai/releases)
+![Foundry](https://img.shields.io/badge/Foundry-v13-orange?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+[![Downloads](https://img.shields.io/github/downloads/BdrGM/nova-multiai/total?style=flat-square&label=downloads)](https://github.com/BdrGM/nova-multiai/releases)
+![Requires](https://img.shields.io/badge/Requires-SocketLib-blue?style=flat-square)
+![Recommends](https://img.shields.io/badge/Recommends-Chat%20Portrait-lightgrey?style=flat-square)
 
 ---
 
