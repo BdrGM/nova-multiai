@@ -10,9 +10,9 @@
   "esmodules": ["main.js"],
   "socket": true,
 
-  "url": "https://github.com/BdrGM/nova-multiai",
-  "manifest": "https://raw.githubusercontent.com/BdrGM/nova-multiai/main/module.json",
-  "download": ""download": "https://github.com/BdrGM/nova-multiai/releases/download/v0.2.0/nova-multiai-v0.2.0.zip"",
+  "url": "https://github.com/BdGM/nova-multiai",
+  "manifest": "https://raw.githubusercontent.com/BdGM/nova-multiai/main/module.json",
+  "download": "https://github.com/BdGM/nova-multiai/releases/download/v0.2.0/nova-multiai-v0.2.0.zip",
 
   "relationships": {
     "requires": [
@@ -21,7 +21,7 @@
         "type": "module",
         "manifest": "https://raw.githubusercontent.com/manuelVo/foundryvtt-socketlib/v1.1.3/module.json",
         "compatibility": { "verified": "13" },
-        "reason": "Used to broadcast TTS/audio to selected users (not just the initiator)."
+        "reason": "Broadcast TTS/audio to selected users (not just the initiator)."
       }
     ],
     "recommends": [
