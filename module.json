@@ -1,13 +1,13 @@
 {
   "id": "nova-multiai",
   "title": "NOVA Multi-AI (Chat + TTS)",
+  "description": "Multi-AI chat with TTS broadcast, whisper routing, and GM controls.",
   "version": "0.2.0",
   "compatibility": { "minimum": "13", "verified": "13" },
   "authors": [{ "name": "BdGM" }],
   "license": "MIT",
 
   "esmodules": ["main.js"],
-
   "socket": true,
 
   "url": "https://github.com/BdrGM/nova-multiai",
@@ -19,7 +19,7 @@
       {
         "id": "socketlib",
         "type": "module",
-        "manifest": "https://raw.githubusercontent.com/manuelVo/foundryvtt-socketlib/master/module.json",
+        "manifest": "https://raw.githubusercontent.com/manuelVo/foundryvtt-socketlib/v1.1.3/module.json",
         "compatibility": { "verified": "13" },
         "reason": "Used to broadcast TTS/audio to selected users (not just the initiator)."
       }
