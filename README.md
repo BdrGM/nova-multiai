@@ -5,7 +5,9 @@ Bring multiple “crew” AIs into your Foundry world. Define up to **8 distinct
 
 Perfect for **ship AIs** (sci‑fi), **familiars** or **patrons/gods** (fantasy), or any **talking NPC** that should feel alive.
 
-<img width="1536" height="1024" alt="ChatGPT Image Sep 4, 2025, 07_32_32 PM" src="https://github.com/user-attachments/assets/2477bece-035b-4ab0-b61e-6907ab1660a3" />
+
+<img width="1536" height="1024" alt="divide" src="https://github.com/user-attachments/assets/87e967a7-2a91-481b-bc1f-5503c0ddf18d" />
+
 
 
 [![Release](https://img.shields.io/github/v/release/BdrGM/nova-multiai?logo=github)](https://github.com/BdrGM/nova-multiai/releases)
