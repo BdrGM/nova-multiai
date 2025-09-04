@@ -12,7 +12,7 @@
 
   "url": "https://github.com/BdrGM/nova-multiai",
   "manifest": "https://raw.githubusercontent.com/BdrGM/nova-multiai/main/module.json",
-  "download": "https://github.com/BdrGM/nova-multiai/archive/refs/heads/main.zip",
+  "download": ""download": "https://github.com/BdrGM/nova-multiai/releases/download/v0.2.0/nova-multiai-v0.2.0.zip"",
 
   "relationships": {
     "requires": [
