@@ -1,5 +1,8 @@
 
-# NOVA Multi-AI (Chat + TTS)
+
+OVA Multi-AI (Chat + TTS)
+
+# N<img width="1536" height="1024" alt="ChatGPT Image Sep 4, 2025, 07_32_32 PM" src="https://github.com/user-attachments/assets/6842eda6-3231-45f9-9985-b29a4cb4eb26" />
 
 Bring multiple “crew” AIs into your Foundry world. Define up to **8 distinct AI identities**, each with a trigger name, speaking actor, **personality prompt**, **knowledge notes**, and **per-user audio access**. Optional **ElevenLabs TTS** turns replies into voice and **NOVA routes audio only to the right listeners** via SocketLib.
 
