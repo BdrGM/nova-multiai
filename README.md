@@ -1,19 +1,17 @@
 NOVA Multi-AI (Chat + TTS)
 
-Bring multiple AI “crew” into your Foundry world. NOVA Multi-AI lets you define up to 8 distinct AI identities, each with their own trigger name, personality prompt, knowledge notes, speaking actor, and per-user audio access. Optional ElevenLabs TTS turns replies into voice — routed only to the allowed listeners via SocketLib (so everyone who should hear, will hear).
-Works great for ship AIs in sci-fi, familiars or talking items in fantasy, helpful NPCs, or even gods speaking through visions.
+Bring multiple “crew” AIs into your Foundry world.
+Define up to 8 distinct AI identities, each with a trigger name, speaking actor, personality prompt, knowledge notes, and per-user audio access.
+Optional ElevenLabs TTS turns replies into voice and NOVA routes audio only to the right listeners using SocketLib.
 
-Requirements
+Works great for ship AIs in sci-fi, familiars or patrons/gods in fantasy, or any talking NPC that should feel alive.
 
-Foundry VTT v13
-
-SocketLib (hard requirement for multi-client audio)
-
-Chat Portrait (optional, recommended)
-
+<p align="center"> <a href="https://github.com/BdrGM/nova-multiai/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/BdrGM/nova-multiai?logo=github"></a> <a href="https://foundryvtt.com/"><img alt="Foundry" src="https://img.shields.io/badge/Foundry-v13- orange"></a> <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-green"></a> <a href="https://raw.githubusercontent.com/manuelVo/foundryvtt-socketlib/v1.1.3/module.json"><img alt="Requires SocketLib" src="https://img.shields.io/badge/Requires-SocketLib-blue"></a> <a href="https://raw.githubusercontent.com/ShoyuVanilla/FoundryVTT-Chat-Portrait/master/module.json"><img alt="Recommends Chat Portrait" src="https://img.shields.io/badge/Recommends-Chat%20Portrait-lightgrey"></a> </p>
 Table of Contents
 
 Features
+
+Requirements
 
 Installation
 
@@ -27,9 +25,9 @@ Access & Audio Routing
 
 GM Preview Voices
 
-ElevenLabs Setup
+ElevenLabs Setup (optional)
 
-How to Use (Players & GMs)
+How to Use
 
 Talking in Public
 
@@ -45,9 +43,9 @@ Troubleshooting
 
 Credits
 
-Links
-
 License
+
+Links
 
 Features
 
@@ -55,37 +53,45 @@ Up to 8 AIs, each with:
 
 Name / Trigger (e.g., Nova, Robotus, Oracle)
 
-Actor to speak as (for chat sender & Chat Portrait)
+Actor to speak as (for chat portrait & name)
 
-Personality Prompt (big, multiline field)
+Personality Prompt (big text area)
 
-Knowledge Notes (big, multiline field)
+Knowledge Notes (big text area)
 
-Per-user access list (who may hear TTS; ALL allowed)
+Per-user access list (who may hear TTS)
 
-Per-user TTS routing via SocketLib
+Per-AI ElevenLabs voice (optional)
 
-Optional rejection line (graceful decline text)
+Rejection line (used if an AI declines a request)
 
-Voice (TTS) settings per AI
+Audio routing via SocketLib
 
-GM Tools
+Voice is played only for authorized users
 
-Preview Voices toggle — GM can monitor all TTS if desired
-
-Test utilities and diagnostics
-
-Utilities
-
-/novabeep — local routing beep (no TTS service needed)
-
-/novatest — quick ElevenLabs sample line
-
-/novaself — confirms your own client can receive audio
+/novabeep, /novatest, /novaself utilities to verify routing & TTS
 
 Whisper-aware
 
-Whispering to an AI keeps the conversation private to the participants (sender + intended recipients + GMs with preview if enabled).
+When a user whispers to an AI, the AI replies privately to the same recipients
+
+TTS plays only for recipients who are both in the whisper and allowed by the AI’s access list
+
+Quality of life
+
+GM Preview Voices (optional): GM hears all TTS to monitor/QA
+
+Optional Chat Portrait integration for gorgeous bubbles
+
+Requirements
+
+Foundry VTT v13
+
+SocketLib (hard requirement for multi-client audio)
+
+Optional: Chat Portrait (recommended)
+
+Optional: ElevenLabs account for TTS
 
 Installation
 
@@ -94,197 +100,189 @@ Manifest URL (Foundry → Add-on Modules → Install Module):
 https://raw.githubusercontent.com/BdrGM/nova-multiai/main/module.json
 
 
-Or download a ZIP from GitHub Releases and install manually.
-
-Note: SocketLib is declared as a required dependency. Foundry will install/enable it for you.
+Or grab the ZIP from Releases
+.
 
 Quick Start
 
-Install & enable the module (and SocketLib; Chat Portrait optional).
+Install & enable SocketLib (required) and Chat Portrait (optional).
 
-In Game Settings → Module Settings → NOVA Multi-AI, enable at least one AI slot.
-
-Fill in:
-
-Name/Trigger (e.g., Nova)
-
-Actor to Speak As (the chat sender/portrait)
-
-Personality + Knowledge
-
-Access (use ALL while testing)
-
-(Optional) Enter ElevenLabs API key & a Voice ID for TTS.
-
-In chat, type:
-Nova, say hello to the crew.
-Everyone with access will see the reply and hear the voice.
-
-Configuration
+Enable NOVA Multi-AI.
 
 Open Game Settings → Module Settings → NOVA Multi-AI.
 
+Turn on an AI Slot, set:
+
+Name/Trigger (e.g., Nova)
+
+Actor to speak as
+
+Personality Prompt and Knowledge Notes
+
+Access (comma-separated Foundry user names or ALL)
+
+(Optional) ElevenLabs Voice ID
+
+(Optional) Paste your ElevenLabs API Key.
+
+Type in chat: Nova, hello there.
+If TTS is configured, only authorized listeners will hear the voice.
+
+Configuration
 AI Slots (1–8)
+Setting	What it does
+Enabled	Toggle slot on/off
+Name / Trigger	Word that activates this AI (e.g., Nova)
+Actor to Speak As	Chat name & portrait source
+Personality Prompt	How the AI behaves, tone, limits
+Knowledge Notes	World/ship/quest notes to keep it in lore
+Access (Player Names or ALL)	Comma-separated Foundry user names who may hear TTS; or ALL
+Voice ID	ElevenLabs voice for this AI
+Rejection Line	Fallback text if the AI declines a prompt
 
-Enabled — turn the slot on/off.
-
-Name / Trigger — word used to address this AI (e.g., Nova).
-
-Actor to Speak As — the Foundry Actor name used for messages and portraits.
-
-Personality Prompt — how this AI talks and behaves (multiline).
-
-Knowledge Notes — local lore/ship data/GM guidance (multiline).
-
-Access (Player Names or ALL) — comma-separated Foundry user names (not actor names) who may hear this AI’s voice. Use ALL to allow everyone.
-
-Rejection Line — optional fallback text when the AI refuses a request.
-
-Voice (TTS) — ElevenLabs voice ID (per AI), if TTS is enabled.
+Tip: Prompts and notes are large fields—treat them like you would an NPC dossier or ship’s manual.
 
 Access & Audio Routing
 
-Chat visibility is standard Foundry behavior (public/whisper).
+TTS is routed via SocketLib to exactly the users listed in the AI’s Access setting.
 
-Audio (TTS) routing is enforced by the Access list:
-only those users (plus GM Preview Voices, if enabled) receive the audio packets via SocketLib.
+If ALL, everyone hears it (except GMs if they’ve opted to ignore).
+
+Whispers narrow the audience further (see below).
 
 GM Preview Voices
 
-Setting: “GM: Preview AI voices”
-When enabled, GMs hear AI voices even if they’re not explicitly on that AI’s access list. Use this to monitor audio while keeping player routing strict.
+GM: Preview AI voices
+When enabled, the GM hears all AI TTS even if not on the access list.
+Handy for testing, streaming, or safety.
 
-ElevenLabs Setup
+ElevenLabs Setup (optional)
 
-API Key: In your ElevenLabs account:
+Log into ElevenLabs → Profile → API Keys → Create new key → Copy.
 
-Profile → Personal/Settings → API Keys → Create/Copy Key.
+In Foundry, paste API Key in NOVA settings.
 
-Paste the key into the module setting “ElevenLabs API Key”.
+On ElevenLabs → Voices → pick a voice → copy its Voice ID.
 
-Voice ID:
+Paste the Voice ID into each AI slot you want voiced.
 
-Voices → select a voice → copy its Voice ID.
+Your API key is stored in world settings, not in this repo.
 
-Paste into the AI slot’s Voice ID field.
-
-Optional: Adjust stability/clarity/etc. in your ElevenLabs dashboard for that voice.
-
-Your API key is stored in world settings, not in the repo.
-
-How to Use (Players & GMs)
+How to Use
 Talking in Public
 
-Players can simply address the AI by its trigger in a normal chat message:
+Just address the AI by its trigger name:
 
-Nova, scan the surrounding region and report anomalies.
+Nova, calculate jump fuel for 2 parsecs.
 
 
-The reply posts as the configured Actor.
-
-TTS plays for users on the Access list (or ALL).
+The reply appears in chat as the configured actor, and TTS plays only for users in the AI’s Access list.
 
 Private Whispers
 
-Whispering to an AI keeps the chat and voice private:
+Whisper to an AI like you would whisper to a player or GM:
 
-/w Nova What do you know about the locked door on B-Deck?
+/w Nova plot a quiet route to 61 Cygni.
 
 
-The reply is whispered back only to the whisper participants.
+NOVA detects it was whispered and replies back privately to the same recipients.
 
-Audio is routed only to those participants who also have access (plus GM if Preview Voices is on).
+Audio is sent only to recipients who are both:
 
-If you whisper to an AI that everyone has access to (e.g., ALL), the whisper still remains private. Audio is delivered only to the whisper participants (and GM preview if enabled). Public access does not override whisper privacy.
+in the whisper target list and
+
+authorized by the AI’s Access list.
 
 Slash Commands
-
-/novabeep — plays a short beep only to the users who would receive this AI’s audio (routing sanity check; no API needed).
-
-/novatest — sends a short line through ElevenLabs for a quick end-to-end test.
-
-/novaself — confirms that your client can receive audio.
-
+Command	Purpose
+/novabeep	Plays a short beep for the same users who would receive TTS (routing test)
+/novatest	Sends a short ElevenLabs line to confirm TTS works
+/novaself	Confirms that your client can hear its routed audio
 Macro Examples
-1) “Speak as Nova” Button (public)
+1) “Talk to Nova” (public)
 
-A simple macro that makes the selected AI speak a line you type in a prompt.
+Creates an input box, then talks to Nova publicly.
 
-const aiName = "Nova"; // your AI trigger
-const line = await new Promise((resolve) => {
-  new Dialog({
-    title: `Speak as ${aiName}`,
-    content: `<p>What should ${aiName} say?</p><textarea id="l" rows="4" style="width:100%"></textarea>`,
-    buttons: {
-      ok: { label: "Send", callback: html => resolve(html.find("#l").val()?.trim() || "") },
-      cancel: { label: "Cancel", callback: () => resolve(null) }
-    },
-    default: "ok"
-  }).render(true);
-});
+new Dialog({
+  title: "Talk to Nova",
+  content: `<p>What do you say to Nova?</p><input type="text" id="line" style="width:100%">`,
+  buttons: {
+    go: {
+      label: "Send",
+      callback: (html) => {
+        const line = html.find("#line").val()?.trim();
+        if (!line) return;
+        ChatMessage.create({ content: `Nova, ${line}` });
+      }
+    }
+  }
+}).render(true);
 
-if (!line) return;
-// Post to chat exactly as a user would; the module picks it up by trigger.
-ChatMessage.create({ content: `${aiName}, ${line}` });
+2) “Whisper Nova” (private to you)
 
-2) “Whisper to Robotus” (private to GM + you)
-const aiName = "Robotus";
-const line = await Dialog.prompt({
-  title: `Whisper to ${aiName}`,
-  content: `<p>Private message:</p><input id="m" type="text" style="width:100%">`,
-  label: "Send",
-  callback: html => html.find("#m").val()?.trim()
-});
+Same, but whispers so only you get the reply & voice (assuming you’re authorized).
 
-if (!line) return;
-// Standard Foundry whisper: the module routes reply + audio back privately.
-ChatMessage.create({ content: `/w ${aiName} ${line}` });
+const userName = game.user.name;
+new Dialog({
+  title: "Whisper Nova",
+  content: `<p>Whisper to Nova</p><input type="text" id="line" style="width:100%">`,
+  buttons: {
+    go: {
+      label: "Send",
+      callback: (html) => {
+        const line = html.find("#line").val()?.trim();
+        if (!line) return;
+        ChatMessage.create({
+          content: `/w Nova ${line}`,
+          whisper: [game.user.id] // ensures the message is actually whispered
+        });
+      }
+    }
+  }
+}).render(true);
 
 
-These macros deliberately use normal chat so they work even if the module API changes. The module sees messages that begin with the AI trigger (or /w Trigger) and handles the rest.
+Want a “God Voice” or “Ship AI” macro? Duplicate these and change the trigger (Nova) to another AI’s name.
 
 Tips & Best Practices
 
-Actor choice matters. Pick an actor with the right portrait/name so table chat looks great (Chat Portrait enhances this).
+Keep prompts focused. Use Personality Prompt for behavior/tone; use Knowledge Notes for world facts.
 
-Prompts vs. Notes: Put stable “how to act” rules in Personality and session/scene facts in Knowledge.
+Name Access by Foundry user names, not player character names.
 
-Access for events: For secret scenes, limit Access to specific players; for shipwide announcements, set ALL.
+Use GM Preview when staging scenes; turn it off for live play if you don’t want to hear everything.
 
-GM Preview during setup, then turn it off if you want to stay out of player-only voice.
+Per-AI voices make different AIs feel distinct (robotic, warm, ethereal, etc.).
+
+Stream ready: Whisper for secret intel; public for announcements.
 
 Troubleshooting
 
-Players can’t hear TTS, but GM can
+No one hears TTS
 
-Ensure the players’ Foundry user names appear in the AI’s Access list (or set to ALL).
+Verify SocketLib is enabled.
 
-Ask them to run /novaself once (and make sure their browser has “unlocked” audio by interacting with the page).
+Check AI Access (user names or ALL).
 
-Confirm GM Preview Voices isn’t the only reason you hear audio.
+Run /novabeep to confirm routing works even without TTS.
 
-No sound for anyone
+Make sure browsers have unlocked audio (click once / any sound).
 
-Verify your ElevenLabs API key and Voice ID.
+GM hears TTS but players don’t
 
-Run /novabeep — if you hear the beep, routing works and the issue is TTS/API side.
+Players may not be in the AI’s Access list.
 
-Check browser autoplay permissions (players may need to click the page once).
+Players can run /novaself to test their client.
 
-Whisper leaks to public
+Private whisper didn’t stay private
 
-By design, the module keeps whispered conversations private (chat + audio).
-If a reply goes public, ensure the message actually began as a whisper:
+Ensure you actually sent a /w to the AI.
 
-It must be /w Trigger ...
+The AI’s reply is whispered to the same recipients, and TTS is sent only to those recipients with access.
 
-Or a direct reply to a whispered prompt.
+Portrait/name missing
 
-Chat portrait/name not showing
-
-Install and enable Chat Portrait.
-
-Make sure Actor to Speak As matches the actual Actor name.
+Install Chat Portrait (recommended) and choose a proper Actor to Speak As.
 
 Credits
 
@@ -292,20 +290,20 @@ Author: BdGM
 
 Foundry VTT by Atropos
 
-SocketLib by @manuelVo (critical for multi-client audio delivery)
+SocketLib by Manuel Vo (required)
 
-Chat Portrait by ShoyuVanilla (optional, recommended)
+Chat Portrait by ShoyuVanilla (recommended)
 
-ElevenLabs — optional TTS backend
-
-Links
-
-Repository: https://github.com/BdrGM/nova-multiai
-
-Manifest: https://raw.githubusercontent.com/BdrGM/nova-multiai/main/module.json
-
-Releases: https://github.com/BdrGM/nova-multiai/releases
+ElevenLabs for TTS (optional)
 
 License
 
 MIT © BdGM
+
+Links
+
+Repo: https://github.com/BdrGM/nova-multiai
+
+Manifest: https://raw.githubusercontent.com/BdrGM/nova-multiai/main/module.json
+
+Releases: https://github.com/BdrGM/nova-multiai/releases
