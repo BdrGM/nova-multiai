@@ -281,7 +281,7 @@ To display a portrait for each AI in chat:
 - **OpenAI** — text generation via the OpenAI API (Chat Completions).
    _This project is not affiliated with or endorsed by OpenAI._
    
-- **Chat Portrait** by ShoyuVanilla (recommended)
+- **Chat Portrait** by p4535992 (recommended)
    
 - **ElevenLabs** for TTS (optional)
   _This project is not affiliated with or endorsed by ElevenLabs._
