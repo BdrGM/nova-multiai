@@ -276,7 +276,7 @@ To display a portrait for each AI in chat:
   
 - **Foundry VTT** by Atropos
   
-- **SocketLib** by Manuel Vo (required)
+- **SocketLib** by Farling (required)
   
 - **OpenAI** — text generation via the OpenAI API (Chat Completions).
    _This project is not affiliated with or endorsed by OpenAI._
