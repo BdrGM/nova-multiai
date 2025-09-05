@@ -285,3 +285,6 @@ Duplicate these to impersonate other AIs (change `Nova` to another trigger).
 - **Repo:** <https://github.com/BdrGM/nova-multiai>  
 - **Manifest:** <https://raw.githubusercontent.com/BdrGM/nova-multiai/main/module.json>  
 - **Releases:** <https://github.com/BdrGM/nova-multiai/releases>
+
+## Find me on Discord
+<img width="252" height="48" alt="image" src="https://github.com/user-attachments/assets/419edb71-2456-4b65-9bf9-702ab61e6f4d" />
