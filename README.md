@@ -259,18 +259,18 @@ Duplicate these to impersonate other AIs (change `Nova` to another trigger).
 ## Credits
 
 - **Author:** BdGM
-- 
+  
 - **Foundry VTT** by Atropos
-- 
+  
 - **SocketLib** by Manuel Vo (required)
-- 
+  
 - **OpenAI** — text generation via the OpenAI API (Chat Completions).
--  _This project is not affiliated with or endorsed by OpenAI._
--  
+   _This project is not affiliated with or endorsed by OpenAI._
+   
 - **Chat Portrait** by ShoyuVanilla (recommended)
--  
+   
 - **ElevenLabs** for TTS (optional)
-- _This project is not affiliated with or endorsed by OpenAI._
+  _This project is not affiliated with or endorsed by ElevenLabs._
 
 ---
 
