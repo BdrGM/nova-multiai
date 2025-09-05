@@ -105,7 +105,7 @@ Or download the ZIP from [Releases](https://github.com/BdrGM/nova-multiai/releas
    - **Access** (comma-separated Foundry **user names** or `ALL`)
    - *(Optional)* **ElevenLabs Voice ID**
 5. *(Optional)* Paste your **ElevenLabs API Key**.
-6. In chat, type: `Nova, hello there.`  
+6. In chat, type: `YouAiNAme, hello there.`  
    Authorized listeners will hear the voice.
 
 ---
