@@ -226,6 +226,19 @@ Duplicate these to impersonate other AIs (change `Nova` to another trigger).
 
 ---
 
+### Adding AI Portraits
+
+To display a portrait for each AI in chat:
+
+1. In Foundry, create a **Character Actor** with the **same name** as your AI’s trigger (e.g., `Nova`).
+2. Set the **actor image/portrait** to whatever picture you want for that AI.
+3. In the NOVA Multi-AI settings, select this Actor in the **“Actor to Speak As”** dropdown.
+
+> When the AI speaks, Foundry will use the chosen actor’s **name and portrait** in the chat log.  
+> For best results, install the optional **Chat Portrait** module to get styled chat bubbles with the AI’s image.
+
+---
+
 ## Tips & Best Practices
 
 - Keep **Prompts** focused; put world facts in **Knowledge Notes**.
