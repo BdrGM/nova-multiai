@@ -11,7 +11,7 @@
   "socket": true,
 
   "url": "https://github.com/BdrGM/nova-multiai",
-  "manifest": "https://raw.githubusercontent.com/BdrGM/nova-multiai/main/module.json",
+  "manifest": "https://raw.githubusercontent.com/BdrGM/nova-multiai/refs/heads/main/module.json",
   "download": "https://github.com/BdrGM/nova-multiai/releases/download/v0.2.0/nova-multiai-v0.2.0.zip",
 
   "relationships": {
