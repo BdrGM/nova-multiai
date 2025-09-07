@@ -76,6 +76,7 @@ Perfect for **ship AIs** (sci‑fi), **familiars** or **patrons/gods** (fantasy)
 ## Requirements
 
 - **Foundry VTT v13**
+- **OpenAi(ChatGPT)** account for API
 - **SocketLib** (required for multi-client audio)
 - _Optional:_ **Chat Portrait**
 - _Optional:_ **ElevenLabs** account for TTS
