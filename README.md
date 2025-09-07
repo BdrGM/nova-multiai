@@ -57,7 +57,7 @@ Perfect for **ship AIs** (sci‑fi), **familiars** or **patrons/gods** (fantasy)
   - **Knowledge Notes** (large field)
   - **Per-user Access list** (who may hear TTS) or `ALL`
   - **Per-AI ElevenLabs Voice ID** (optional)
-  - **Rejection Line** when the AI refuses
+
 
 - **Audio routing via SocketLib**
   - TTS is **played only** for authorized listeners
