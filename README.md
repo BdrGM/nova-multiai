@@ -124,7 +124,7 @@ Or download the ZIP from [Releases](https://github.com/BdrGM/nova-multiai/releas
 | **Knowledge Notes** | World/ship/quest facts |
 | **Access (user names or ALL)** | Comma-separated **Foundry user names** or `ALL` |
 | **Voice ID** | ElevenLabs voice for this AI |
-| **Rejection Line** | Text used when the AI declines |
+
 
 > **Tip:** Put rules of engagement in the _Prompt_ and setting facts in _Knowledge Notes_.
 
