@@ -28,9 +28,17 @@ This list is not a roadmap — just things I’d like to add when time allows.
 
 ---
 
+## 🧠 Memory (Prototype/Long-Term)
+- Remembers **recent conversations** per-AI and per-player.
+- Designed to be **opt-in** with hard limits (fast + safe).
+- Export/import memory to a Journal (“NOVA Memory”) for review and curation.
+
+---
+
 ## 📝 Notes
 - These are **wishes**, not guaranteed features.
 - Timeframe:  
   - **Macros** → next update focus.  
   - **Voice integration** → depends on Notesbot webhook support (external dependency).  
-  - **Knowledge search** → long-term idea, not soon.  
+  - **Knowledge search** → long-term idea, not soon.
+  - **Memory** → Long-term, probably after macros
