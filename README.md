@@ -302,5 +302,6 @@ To display a portrait for each AI in chat:
 - **Releases:** <https://github.com/BdrGM/nova-multiai/releases>
 
 ## Find me on Discord
-https://discord.gg/yRFSj7t9hk
+[![Join me on Discord](https://img.shields.io/badge/Discord-Join%20Now-5865F2?logo=discord&logoColor=white)](https://discord.gg/yRFSj7t9hk)
+
 <img width="252" height="48" alt="image" src="https://github.com/user-attachments/assets/419edb71-2456-4b65-9bf9-702ab61e6f4d" />
