@@ -1,4 +1,4 @@
-/* NOVA Multi-AI — v0.2.1 (Foundry v13+ compat, speaker-aware toggle per AI) */
+/* NOVA Multi-AI — v0.2.2 (Foundry v13+ compat, speaker-aware toggle per AI, GM-only UI, player-hidden category) */
 
 const MODULE_ID = "nova-multiai";
 console.log(`[${MODULE_ID}] loaded`);
@@ -12,15 +12,13 @@ console.log(`[${MODULE_ID}] loaded`);
   if (window.__NOVA_COMPAT__) return;
   window.__NOVA_COMPAT__ = true;
 
-  // Keep a private handle to the namespaced TextEditor implementation.
   try {
     const TE = foundry?.applications?.ux?.TextEditor?.implementation;
-    if (TE) window.__NOVA_TextEditor__ = TE; // stash privately
+    if (TE) window.__NOVA_TextEditor__ = TE;
   } catch (e) {
     console.warn("[NOVA compat] TextEditor lookup skipped:", e);
   }
 
-  // Bridge legacy hook to the new one (HTMLElement instead of jQuery)
   try {
     const _on = Hooks.on.bind(Hooks);
     Hooks.on = function(name, fn, ...rest) {
@@ -195,47 +193,48 @@ function t(key, repl = {}) {
   return Object.entries(repl).reduce((s, [k, v]) => s.replaceAll(`{${k}}`, v), base);
 }
 
-/* --------------- SETTINGS --------------- */
-Hooks.once("init", () => {
+/* --------------- SETTINGS (register at setup so we know if user is GM) --------------- */
+Hooks.once("setup", () => {
   console.log("[NOVA] init (clean)");
+
+  const isGM = !!game.user?.isGM;
+  const gmOnly = { scope: "world", config: isGM, restricted: true };
+  const gmOnlyClient = { scope: "client", config: isGM, restricted: true };
+
   game.settings.register(MODULE_ID, "enabled", {
+    ...gmOnly,
     name: "Enable AI Responses (Kill Switch)",
-    scope: "world",
-    config: true,
     type: Boolean,
     default: true
   });
 
   game.settings.register(MODULE_ID, "openaiKey", {
+    ...gmOnly,
     name: "OpenAI API Key",
-    scope: "world",
-    config: true,
     type: String,
     default: "",
     secret: true
   });
 
   game.settings.register(MODULE_ID, "elevenKey", {
+    ...gmOnly,
     name: "ElevenLabs API Key",
-    scope: "world",
-    config: true,
     type: String,
     default: "",
     secret: true
   });
 
   game.settings.register(MODULE_ID, "gmPreviewTTS", {
+    ...gmOnly,
     name: "GM: Preview AI voices",
-    scope: "world",
-    config: true,
     type: Boolean,
     default: false
   });
 
+  // Client-facing language selector (GM-only UI; players don't see the category at all)
   game.settings.register(MODULE_ID, "uiLanguage", {
+    ...gmOnlyClient,
     name: "UI Language",
-    scope: "client",
-    config: true,
     type: String,
     default: "auto",
     choices: {
@@ -245,14 +244,12 @@ Hooks.once("init", () => {
       de: "Deutsch",
       es: "Español",
       ja: "日本語"
-    },
-    onChange: () => Hooks.callAll("novaRelocalize")
+    }
   });
 
   game.settings.register(MODULE_ID, "answerCharLimit", {
+    ...gmOnly,
     name: "AI Answer Length Limit",
-    scope: "world",
-    config: true,
     type: Number,
     default: 600,
     range: { min: 200, max: 1200, step: 50 }
@@ -260,59 +257,50 @@ Hooks.once("init", () => {
 
   for (let i = 1; i <= 8; i++) {
     game.settings.register(MODULE_ID, `ai${i}Enabled`, {
+      ...gmOnly,
       name: `AI #${i} — Enabled`,
-      scope: "world",
-      config: true,
       type: Boolean,
       default: i === 1
     });
     game.settings.register(MODULE_ID, `ai${i}Name`, {
+      ...gmOnly,
       name: `AI #${i} — Name / Trigger`,
-      scope: "world",
-      config: true,
       type: String,
       default: i === 1 ? "Nova" : ""
     });
     game.settings.register(MODULE_ID, `ai${i}ActorName`, {
+      ...gmOnly,
       name: `AI #${i} — Actor to Speak As`,
-      scope: "world",
-      config: true,
       type: String,
       default: i === 1 ? "NOVA" : ""
     });
     game.settings.register(MODULE_ID, `ai${i}VoiceId`, {
+      ...gmOnly,
       name: `AI #${i} — ElevenLabs Voice ID`,
-      scope: "world",
-      config: true,
       type: String,
       default: ""
     });
     game.settings.register(MODULE_ID, `ai${i}Prompt`, {
+      ...gmOnly,
       name: `AI #${i} — Personality`,
-      scope: "world",
-      config: true,
       type: String,
       default: ""
     });
     game.settings.register(MODULE_ID, `ai${i}Knowledge`, {
+      ...gmOnly,
       name: `AI #${i} — Knowledge Notes`,
-      scope: "world",
-      config: true,
       type: String,
       default: ""
     });
     game.settings.register(MODULE_ID, `ai${i}AccessList`, {
+      ...gmOnly,
       name: `AI #${i} — Access (Player Names or ALL)`,
-      scope: "world",
-      config: true,
       type: String,
       default: "ALL"
     });
-    // NEW: GM-only toggle — Ignore speaker identity
     game.settings.register(MODULE_ID, `ai${i}IgnoreSpeaker`, {
+      ...gmOnly,
       name: `AI #${i} — GM: Ignore speaker identity`,
-      scope: "world",
-      config: true,
       type: Boolean,
       default: false
     });
@@ -371,12 +359,11 @@ function recipientsForAI(ai, includeGMs = true) {
 function findActorByName(n) { return game.actors.getName(n) ?? null; }
 function randId() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
 
-/* Speaker resolver: pick actor/token first; if none, fall back to user */
+/* Speaker resolver */
 function identifySpeaker(userId) {
   const user = game.users.get(userId) || game.user;
   const userName = user?.name || "Unknown User";
 
-  // Prefer a token the user currently controls
   let token = null;
   try {
     const controlled = canvas?.tokens?.controlled || [];
@@ -396,11 +383,7 @@ function identifySpeaker(userId) {
 
   const actorName = actor?.name || null;
   const tokenName = token?.name || null;
-
-  // Effective display name: actor/token if present, else user
   const effective = actorName || tokenName || userName;
-
-  // “mode” lets us tailor the prompt text
   const mode = (actorName || tokenName) ? "in-character" : "ooc";
 
   return { user, userName, actorName, tokenName, display: effective, mode };
@@ -424,14 +407,12 @@ function buildSpeakerInstructions(ctx, ignoreSpeaker = false) {
       userLine: `Speaker: ${name} (in-character)`
     };
   }
-  // Out-of-character / no actor
   return {
     systemLine: `The speaker is a user named "${ctx.userName}".`,
     userLine: `Speaker: ${ctx.userName}`
   };
 }
 
-/* ====== minimal, prompt-driven system messages (no small header) ====== */
 async function askOpenAI(ai, msg, speakerCtx = null) {
   const key = game.settings.get(MODULE_ID, "openaiKey");
   const limit = Number(game.settings.get(MODULE_ID, "answerCharLimit")) || 600;
@@ -440,36 +421,21 @@ async function askOpenAI(ai, msg, speakerCtx = null) {
   const { systemLine, userLine } = buildSpeakerInstructions(speakerCtx, !!ai.ignoreSpeaker);
 
   const messages = [];
-
-  // Explicit assistant identity so it always uses the configured name
   const identityLine = `You are an assistant named "${ai.name}". Always refer to yourself with exactly this name. Do not adopt any other name even if a user suggests one. Speak in first person.`;
   messages.push({ role: "system", content: identityLine });
 
-  if (ai.prompt && ai.prompt.trim()) {
-    messages.push({ role: "system", content: ai.prompt.trim() });
-  }
-
-  if (systemLine) {
-    messages.push({ role: "system", content: systemLine });
-  }
-
-  if (ai.knowledge && ai.knowledge.trim()) {
-    messages.push({ role: "system", content: ai.knowledge.trim() });
-  }
+  if (ai.prompt && ai.prompt.trim()) messages.push({ role: "system", content: ai.prompt.trim() });
+  if (systemLine) messages.push({ role: "system", content: systemLine });
+  if (ai.knowledge && ai.knowledge.trim()) messages.push({ role: "system", content: ai.knowledge.trim() });
 
   const userContent = [userLine ? `${userLine}\n\n` : "", msg].join("");
-
   messages.push({ role: "user", content: userContent });
 
   try {
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0.4,
-        messages
-      })
+      body: JSON.stringify({ model: "gpt-4o-mini", temperature: 0.4, messages })
     });
     if (!r.ok) throw new Error(`OpenAI ${r.status}`);
     const j = await r.json();
@@ -494,11 +460,7 @@ async function elevenGenerate(voiceId, text) {
     const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
       headers: { "xi-api-key": key, "Content-Type": "application/json", Accept: "audio/mpeg" },
-      body: JSON.stringify({
-        model_id: "eleven_multilingual_v2",
-        voice_settings: { stability: 0.5, similarity_boost: 0.6 },
-        text
-      })
+      body: JSON.stringify({ model_id: "eleven_multilingual_v2", voice_settings: { stability: 0.5, similarity_boost: 0.6 }, text })
     });
     if (!r.ok) throw new Error(`XI ${r.status}`);
     const buf = await r.arrayBuffer();
@@ -513,7 +475,7 @@ async function elevenGenerate(voiceId, text) {
 (function registerClientAudio() {
   const queue = [];
   let playing = false;
-  const store = {}; // id -> {total, parts(Map), mime, done}
+  const store = {};
 
   function enqueue({ b64, mime = "audio/mpeg", volume = 0.9 }) {
     try {
@@ -654,7 +616,6 @@ Hooks.once("ready", () => {
     if (!found.length) return;
     found.sort((a, b) => a.idx - b.idx);
 
-    // Build the strict speaker context
     const ctx = identifySpeaker(userId);
 
     for (const { ai } of found) {
@@ -681,7 +642,6 @@ Hooks.once("ready", () => {
     if (!userHasAccess(ai, user)) return;
 
     const audience = [user.id, ...gmUserIds()];
-
     await ChatMessage.create({
       speaker: ChatMessage.getSpeaker({ user }),
       whisper: audience,
@@ -745,7 +705,7 @@ Hooks.once("ready", () => {
 });
 
 /* ===================================================================
-   UI injection (+ hide player-only bits)
+   UI injection (GM polish; player visibility already disabled by setup)
    =================================================================== */
 (() => {
   const MOD = MODULE_ID;
@@ -793,7 +753,7 @@ Hooks.once("ready", () => {
     if (nameInput) { nameInput.addEventListener("input", setTitle); nameInput.addEventListener("change", setTitle); }
     setTitle();
 
-    const LS_KEY = `nova-ai-collapsed-${i}`; 
+    const LS_KEY = `nova-ai-collapsed-${i}`;
     const apply = (collapsed) => {
       chev.textContent = collapsed ? "▸" : "▾";
       rows.forEach((r) => (r.style.display = collapsed ? "none" : ""));
@@ -948,7 +908,6 @@ Hooks.once("ready", () => {
         label.childNodes.forEach((n, idx) => {
           if (idx === 0 && n.nodeType === 3) n.textContent = `AI #${i} — ${t(locKey)}`;
         });
-        // GM-only visibility for IgnoreSpeaker
         if (key === `ai${i}IgnoreSpeaker`) {
           if (!isGM) row.style.display = "none";
           else ensureLabelHint(row, t("hint_ignoreSpeaker"));
@@ -965,45 +924,12 @@ Hooks.once("ready", () => {
     }
   }
 
-  function upgradePair(scope, i) {
-    const keyP = `ai${i}Prompt`;
-    const keyK = `ai${i}Knowledge`;
-    const selP = `textarea[name="${MOD}.${keyP}"], input[name="${MOD}.${keyP}"]`;
-    const selK = `textarea[name="${MOD}.${keyK}"], input[name="${MOD}.${keyK}"]`;
-
-    const elP = scope.querySelector?.(selP) || document.querySelector(selP);
-    const elK = scope.querySelector?.(selK) || document.querySelector(selK);
-    if (!elP && !elK) return;
-
-    const taP = ensureTextarea(elP);
-    const taK = ensureTextarea(elK);
-    if (taP) styleTextarea(taP);
-    if (taK) styleTextarea(taK);
-
-    ensureLabelHint(aiRowFor(scope, keyP), t("hint_personality"));
-    ensureLabelHint(aiRowFor(scope, keyK), t("hint_knowledge"));
-
-    const ctrP = taP ? getCounterFor(taP) : null;
-    const ctrK = taK ? getCounterFor(taK) : null;
-    const combined = getCombinedUnder(taK || taP, i);
-
-    function refresh() {
-      if (ctrP) updateCounter(ctrP, taP.value.length);
-      if (ctrK) updateCounter(ctrK, taK.value.length);
-      const total = (taP ? taP.value.length : 0) + (taK ? taK.value.length : 0);
-      updateCombined(combined, total);
-    }
-    refresh();
-    if (taP) taP.addEventListener("input", refresh);
-    if (taK) taK.addEventListener("input", refresh);
-  }
-
   Hooks.on("renderSettingsConfig", (app, html) => {
+    if (!game.user?.isGM) return; // players won't see the category at all now
     const scope = html[0];
     try {
       for (let i = 1; i <= 8; i++) {
         ensureHeader(scope, i);
-        upgradePair(scope, i);
       }
       localizeRegisteredRows(scope);
     } catch (e) { console.error("NOVA | UI inject error", e); }
