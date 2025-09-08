@@ -2,6 +2,41 @@
 
 All notable changes to **NOVA Multi‑AI (Chat + TTS)** will be documented in this file.  
 This project follows **semver**. Dates are in YYYY‑MM‑DD.
+---
+
+## [0.2.2] – 2025-09-08
+
+### Added
+- GM-only **“Ignore speaker identity”** checkbox per AI. When enabled, that AI will not tailor replies to the current actor/token or user; it responds without speaker context. Visible only to GMs.
+- Localization for the new checkbox hint (EN, FR, DE, ES, JA).
+
+### Changed
+- **Assistant identity enforcement:** Each AI now consistently refers to itself by its own configured name (not always “Nova”).
+- **Prompt pipeline cleanup:** Removed the tiny built-in header so behavior/style comes entirely from the AI’s Personality + Knowledge fields. (Speaker context still applies unless the new checkbox is enabled.)
+- **Speaker detection rules:** If a user is speaking as an actor/token, that actor name is used; otherwise the user’s Foundry name is used. Prevents “GM + Actor” double attribution.
+
+### Fixed
+- **Foundry v13+ deprecations:**  
+  – Bridged `renderChatMessage` → `renderChatMessageHTML` (no jQuery dependency).  
+  – Replaced global `TextEditor` access with `foundry.applications.ux.TextEditor.implementation`.  
+  These silence warnings without altering chat behavior.
+
+### UI
+- Per-AI panels remain collapsible; added the GM-only checkbox with localized hint text.  
+- Kept character counters and combined-length indicator for Personality/Knowledge fields.
+
+### Compatibility
+- Foundry VTT: v13 (minimum & verified).  
+- Plays nicely with: SocketLib, chat-portrait.  
+- No new dependencies, no migrations.
+
+### Upgrade Notes
+- Defaults preserve prior behavior: speaker recognition **ON**.  
+- To opt out for a specific AI: **Settings → that AI → GM: Ignore speaker identity**.
+
+### Known Issues
+- None new. (Autoplay/TTS caveats from 0.2.0 still apply where relevant.)
+
 
 ---
 
