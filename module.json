@@ -2,7 +2,7 @@
   "id": "nova-multiai",
   "title": "NOVA Multi-AI (Chat + TTS)",
   "description": "Multi-AI chat with TTS broadcast, whisper routing, and GM controls.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "compatibility": { "minimum": "13", "verified": "13" },
   "authors": [{ "name": "BdrGM" }],
   "license": "MIT",
@@ -12,7 +12,7 @@
 
   "url": "https://github.com/BdrGM/nova-multiai",
   "manifest": "https://raw.githubusercontent.com/BdrGM/nova-multiai/main/module.json",
-  "download": "https://github.com/BdrGM/nova-multiai/releases/download/v0.2.1/nova-multiai-v0.2.1.zip",
+  "download": "https://github.com/BdrGM/nova-multiai/releases/download/v0.2.2/nova-multiai-v0.2.2.zip",
 
   "relationships": {
     "requires": [
