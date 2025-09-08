@@ -303,7 +303,7 @@ To display a portrait for each AI in chat:
 
 ## Find me on Discord
 
-[![Discord Banner]([https://i.imgur.com/yourCustomBanner.png](https://github.com/user-attachments/assets/419edb71-2456-4b65-9bf9-702ab61e6f4d))](https://discord.gg/yRFSj7t9hk)
+[![Discord Banner](<img width="244" height="43" alt="image" src="https://github.com/user-attachments/assets/8760329c-20e1-4138-ab3d-a3b91aaf6bf4" />)](https://discord.gg/yRFSj7t9hk)
 
 ---
 
