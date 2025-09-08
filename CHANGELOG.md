@@ -2,6 +2,27 @@
 
 All notable changes to **NOVA Multi‑AI (Chat + TTS)** will be documented in this file.  
 This project follows **semver**. Dates are in YYYY‑MM‑DD.
+
+---
+
+## [0.2.3] – 2025-09-08
+
+## Changed
+- Player-invisible settings: the NOVA Multi-AI category in **Game Settings** is now hidden for non-GM users. GMs still see and can edit all options.
+
+### UI
+- No visual changes for GMs. For players, the module no longer appears in the left-hand module list of Game Settings.
+
+### Compatibility
+- Foundry VTT: v13 (minimum & verified).
+- Works alongside SocketLib and chat-portrait as before.
+
+### Upgrade Notes
+- No action required. Behavior is automatic: players cannot see the module’s settings panel.
+
+### Known Issues
+- None.
+
 ---
 
 ## [0.2.2] – 2025-09-08
