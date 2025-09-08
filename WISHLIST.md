@@ -35,6 +35,12 @@ This list is not a roadmap — just things I’d like to add when time allows.
 
 ---
 
+## 🗣️ Option to have the Ai to answer in a different language than the one spoken to it.(Short time)
+- Allow the Ai to be spoken in, let's say English, and have it answer in Klingon or any chosen language
+- Have it optional
+
+---
+
 ## 📝 Notes
 - These are **wishes**, not guaranteed features.
 - Timeframe:  
