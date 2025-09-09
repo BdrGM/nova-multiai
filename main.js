@@ -1,12 +1,19 @@
-/* NOVA Multi-AI — v0.2.2 (Foundry v13+ compat, speaker-aware toggle per AI, GM-only UI, player-hidden category) */
+/* NOVA Multi-AI — v0.3.0 (Foundry v13+)
+   - Centralized UI + i18n
+   - BIG fields + per-field live counters (no per-field max)
+   - Combined live counter with language-based recommended cap
+   - Polyglot dropdown rendered by main.js (hidden unless Polyglot is active)
+   - Single-orchestrator via socket (fixes whispers + duplicate TTS)
+   - Assigned users trigger their AI without naming it (whisper to user + all GMs)
+   - GM can always trigger AIs locally
+   - NEW: Polyglot handshake (listen+emit) for addon integration
+*/
 
 const MODULE_ID = "nova-multiai";
 console.log(`[${MODULE_ID}] loaded`);
 
 /* ============================
-   NOVA Compat Guard (Foundry v13+)
-   - Bridges renderChatMessage -> renderChatMessageHTML
-   - NO global TextEditor access (uses namespaced only)
+   Foundry v13+ compat bridge
    ============================ */
 (() => {
   if (window.__NOVA_COMPAT__) return;
@@ -20,42 +27,105 @@ console.log(`[${MODULE_ID}] loaded`);
   }
 
   try {
-    const _on = Hooks.on.bind(Hooks);
-    Hooks.on = function(name, fn, ...rest) {
+    const TE_on = Hooks.on.bind(Hooks);
+    Hooks.on = function (name, fn, ...rest) {
       if (name === "renderChatMessage" && typeof fn === "function") {
         console.warn("[NOVA compat] Upgrading 'renderChatMessage' handler to 'renderChatMessageHTML'.");
-        const wrapped = function(message, element, data) {
+        const wrapped = function (message, element, data) {
           const $el = (window.jQuery && element) ? window.jQuery(element) : element;
           return fn(message, $el, data);
         };
-        return _on("renderChatMessageHTML", wrapped, ...rest);
+        return TE_on("renderChatMessageHTML", wrapped, ...rest);
       }
-      return _on(name, fn, ...rest);
+      return TE_on(name, fn, ...rest);
     };
   } catch (e) {
     console.warn("[NOVA compat] Hook bridge skipped:", e);
   }
 })();
 
-/* ---------------- L10N ---------------- */
+/* ---------------- Polyglot choices (fallback) ---------------- */
+const POLYGLOT_BASE_CHOICES = [
+  ["none", "— None / Default —"],
+  ["Common", "Common"],
+  ["Elven", "Elven"],
+  ["Dwarven", "Dwarven"],
+  ["Gnomish", "Gnomish"],
+  ["Halfling", "Halfling"],
+  ["Orcish", "Orcish"],
+  ["Goblin", "Goblin"],
+  ["Sylvan", "Sylvan"],
+  ["Undercommon", "Undercommon"],
+  ["Draconic", "Draconic"],
+  ["Infernal", "Infernal"],
+  ["Abyssal", "Abyssal"],
+  ["Celestial", "Celestial"],
+  ["Aquan", "Aquan"],
+  ["Auran", "Auran"],
+  ["Ignan", "Ignan"],
+  ["Terran", "Terran"],
+  ["Druidic", "Druidic"],
+  ["ThievesCant", "Thieves’ Cant"],
+  ["Giant", "Giant"],
+  ["Gnoll", "Gnoll"],
+  ["Tengu", "Tengu"],
+  ["Necril", "Necril"],
+  ["Shadowtongue", "Shadowtongue"]
+];
+
+/* Keep the active language choices here, overridable by the addon via hook */
+const POLY_STATE = {
+  choices: POLYGLOT_BASE_CHOICES.slice() // [value,label]
+};
+
+/* Listen for addon-provided languages (safe if addon absent) */
+Hooks.on("nova-polyglot:languages", ({ choices } = {}) => {
+  if (Array.isArray(choices) && choices.length) {
+    POLY_STATE.choices = choices;
+    // If the settings window is open, refresh the dropdowns live
+    const app = ui?.windows && Object.values(ui.windows).find(w => w.options?.id === "client-settings");
+    if (app?.rendered) {
+      try {
+        const el = app.element?.get?.(0) || app.element?.[0];
+        if (el) __NOVA_applyPolyglotChoices(el);
+      } catch {}
+    }
+  }
+});
+
+/* ---------------- i18n ---------------- */
 const L10N = {
   en: {
-    counter_characters: "Maximum suggested characters: {n}",
-    combined_label: "Combined (Personality + Knowledge): {n} characters",
-    focus_hint: "Hint: very long prompts/notes can make the model lose focus. Keep things focused and relevant.",
-    hint_personality: "Personality: instructions for how this AI speaks and behaves. Keep it concise and actionable—role, tone, boundaries (e.g., only ship knowledge; defer when unsure), and any hard rules. Tip: ask ChatGPT to draft a concise persona you can paste here.",
-    hint_knowledge: "Knowledge Notes: factual campaign notes this AI can cite—places, NPCs, dates, ship data. Use short bullet-like statements and proper nouns. Avoid prose or meta-instructions; keep notes current and focused.",
-    hint_ignoreSpeaker: "GM-only. When ON, this AI will not try to detect who’s speaking (actor/token or username). Replies won’t be tailored to the speaker.",
+    counter_used: "{used} characters",
+    combined_label: "Combined (Personality + Knowledge): {used} / {n}",
+    combined_hint: "Recommended combined max (by language): {n}",
+    focus_hint:
+      "Hint: very long prompts/notes can make the model lose focus. Keep things focused and relevant.",
+    hint_personality:
+      "Personality: instructions for how this AI speaks and behaves. Keep it concise and actionable—role, tone, boundaries (e.g., only ship knowledge; defer when unsure), and any hard rules. Tip: ask ChatGPT to draft a concise persona you can paste here.",
+    hint_knowledge:
+      "Knowledge Notes: factual campaign notes this AI can cite—places, NPCs, dates, ship data. Use short bullet-like statements and proper nouns. Avoid prose or meta-instructions; keep notes current and focused.",
+    hint_ignoreSpeaker:
+      "GM-only. When ON, this AI will not try to detect who’s speaking (actor/token or username). Replies won’t be tailored to the speaker.",
+
+    field_polyglot: "Language (Polyglot) [GM only]",
+    hint_polyglot:
+      "Polyglot glyphs/comprehension for this AI. Voices are handled by your Polyglot addon.",
+
     settings_enabled_name: "Enable AI Responses (Kill Switch)",
     settings_openai_name: "OpenAI API Key",
     settings_eleven_name: "ElevenLabs API Key",
     settings_gmpreview_name: "GM: Preview AI voices",
     settings_gmpreview_hint: "When ON, the GM also hears TTS. (GM-only setting.)",
+
     ui_language: "UI Language",
     ui_language_hint: "Change labels and help text for this module.",
     ui_language_auto: "Auto (use Foundry)",
+
     slider_label: "AI Answer Length Limit",
-    slider_hint: "Global cap on a single AI reply. Suggested range: 200–1,200 characters. Default 600 for a concise answer.",
+    slider_hint:
+      "Global cap on a single AI reply. Suggested range: 200–1,200 characters. Default 600 for a concise answer.",
+
     field_enabled: "Enabled",
     field_nameTrigger: "Name / Trigger",
     field_actorSpeakAs: "Actor to Speak As",
@@ -66,22 +136,36 @@ const L10N = {
     field_ignoreSpeaker: "GM: Ignore speaker identity"
   },
   fr: {
-    counter_characters: "Nombre maximal suggéré de caractères : {n}",
-    combined_label: "Total (Personnalité + Connaissances) : {n} caractères",
-    focus_hint: "Astuce : des textes très longs peuvent faire perdre le fil au modèle. Restez concis et pertinent.",
-    hint_personality: "Personnalité : consignes sur la voix et le comportement de l’IA. Soyez concis et actionnable—rôle, ton, limites (ex. uniquement les connaissances du vaisseau ; s’abstenir en cas de doute) et règles strictes. Astuce : demandez à ChatGPT de rédiger une persona concise.",
-    hint_knowledge: "Notes de connaissances : faits que l’IA peut citer—lieux, PNJ, dates, données du vaisseau. Utilisez des puces courtes et des noms propres. Évitez la prose et les méta-consignes ; maintenez à jour.",
-    hint_ignoreSpeaker: "Réservé au MJ. Si activé, cette IA n’essaiera pas d’identifier l’orateur (acteur/jeton ou pseudo). Les réponses ne seront pas adaptées à l’orateur.",
+    counter_used: "{used} caractères",
+    combined_label: "Total (Personnalité + Connaissances) : {used} / {n}",
+    combined_hint: "Nombre combiné recommandé (selon la langue) : {n}",
+    focus_hint:
+      "Astuce : des textes très longs peuvent faire perdre le fil au modèle. Restez concis et pertinent.",
+    hint_personality:
+      "Personnalité : consignes sur la voix et le comportement de l’IA. Soyez concis et actionnable—rôle, ton, limites et règles strictes.",
+    hint_knowledge:
+      "Notes de connaissances : faits citables—lieux, PNJ, dates, données. Utilisez des puces courtes et des noms propres. Évitez la prose ; gardez à jour.",
+    hint_ignoreSpeaker:
+      "Réservé au MJ. Si activé, cette IA n’essaiera pas d’identifier l’orateur (acteur/jeton ou pseudo).",
+
+    field_polyglot: "Langue (Polyglot) [MJ uniquement]",
+    hint_polyglot:
+      "Glyphes/compréhension Polyglot pour cette IA. Les voix sont gérées par votre addon Polyglot.",
+
     settings_enabled_name: "Activer les réponses de l’IA (coupure générale)",
     settings_openai_name: "Clé API OpenAI",
     settings_eleven_name: "Clé API ElevenLabs",
     settings_gmpreview_name: "MJ : pré-écouter les voix de l’IA",
-    settings_gmpreview_hint: "Si activé, le MJ entend aussi la synthèse vocale. (Paramètre MJ uniquement.)",
+    settings_gmpreview_hint: "Si activé, le MJ entend aussi la synthèse vocale. (MJ uniquement.)",
+
     ui_language: "Langue de l’interface",
     ui_language_hint: "Changer les libellés et aides de ce module.",
     ui_language_auto: "Auto (langue de Foundry)",
+
     slider_label: "Limite de longueur des réponses",
-    slider_hint: "Limite globale par réponse. Plage conseillée : 200–1 200 caractères. Valeur par défaut : 600.",
+    slider_hint:
+      "Limite globale par réponse. Plage conseillée : 200–1 200 caractères. Valeur par défaut : 600.",
+
     field_enabled: "Activé",
     field_nameTrigger: "Nom / Déclencheur",
     field_actorSpeakAs: "Acteur (parler en tant que)",
@@ -92,22 +176,29 @@ const L10N = {
     field_ignoreSpeaker: "MJ : ignorer l’identité de l’orateur"
   },
   de: {
-    counter_characters: "Empfohlene maximale Zeichen: {n}",
-    combined_label: "Gesamt (Persönlichkeit + Wissen): {n} Zeichen",
-    focus_hint: "Hinweis: Sehr lange Eingaben können das Modell unkonzentriert machen. Prägnant und relevant bleiben.",
-    hint_personality: "Persönlichkeit: Anweisungen für Stimme und Verhalten der KI. Kurz und umsetzbar—Rolle, Ton, Grenzen (z. B. nur Schiffswissen; bei Unsicherheit zurückhalten) und feste Regeln. Tipp: Lass dir von ChatGPT eine knappe Persona entwerfen.",
-    hint_knowledge: "Wissensnotizen: Fakten, die die KI zitieren darf—Orte, NSCs, Daten. Kurze Stichpunkte und Eigennamen verwenden. Keine Prosa oder Meta-Regeln; aktuell halten.",
-    hint_ignoreSpeaker: "Nur SL. Wenn AN, erkennt diese KI den Sprecher (Aktor/Token oder Benutzername) nicht. Antworten werden nicht personalisiert.",
+    counter_used: "{used} Zeichen",
+    combined_label: "Gesamt (Persönlichkeit + Wissen): {used} / {n}",
+    combined_hint: "Empfohlene kombinierte Obergrenze (sprachabhängig): {n}",
+    focus_hint: "Hinweis: Sehr lange Eingaben können das Modell ablenken.",
+    hint_personality: "Persönlichkeit: kurz und umsetzbar—Rolle, Ton, Grenzen, Regeln.",
+    hint_knowledge: "Wissensnotizen: Orte, NSCs, Daten als Stichpunkte.",
+
+    field_polyglot: "Sprache (Polyglot) [nur SL]",
+    hint_polyglot: "Polyglot-Glyphen/Verstehen für diese KI. Stimmen kommen vom Polyglot-Addon.",
+
     settings_enabled_name: "KI-Antworten aktivieren (Hauptschalter)",
     settings_openai_name: "OpenAI API-Schlüssel",
     settings_eleven_name: "ElevenLabs API-Schlüssel",
     settings_gmpreview_name: "SL: KI-Stimmen vorhören",
-    settings_gmpreview_hint: "Wenn AN, hört der SL die TTS-Ausgabe mit. (Nur für SL.)",
+    settings_gmpreview_hint: "SL hört TTS mit (nur SL).",
+
     ui_language: "UI-Sprache",
-    ui_language_hint: "Beschriftungen und Hilfetexte dieses Moduls umstellen.",
-    ui_language_auto: "Auto (Foundry verwenden)",
-    slider_label: "Antwortlängen-Limit der KI",
-    slider_hint: "Globales Limit pro Antwort. Empfohlen: 200–1 200 Zeichen. Standard 600.",
+    ui_language_hint: "Beschriftungen und Hilfe anpassen.",
+    ui_language_auto: "Auto (Foundry)",
+
+    slider_label: "Antwortlängen-Limit",
+    slider_hint: "Empfohlen: 200–1 200 Zeichen. Standard 600.",
+
     field_enabled: "Aktiviert",
     field_nameTrigger: "Name / Auslöser",
     field_actorSpeakAs: "Als Schauspieler sprechen",
@@ -118,55 +209,66 @@ const L10N = {
     field_ignoreSpeaker: "SL: Sprecheridentität ignorieren"
   },
   es: {
-    counter_characters: "Máximo sugerido de caracteres: {n}",
-    combined_label: "Total (Personalidad + Conocimientos): {n} caracteres",
-    focus_hint: "Sugerencia: textos muy largos pueden dispersar al modelo. Mantén el foco y la relevancia.",
-    hint_personality: "Personalidad: instrucciones sobre cómo habla y actúa la IA. Sé conciso y accionable—rol, tono, límites (p. ej., solo conocimiento de la nave; abstenerse si hay duda) y reglas estrictas. Consejo: pídele a ChatGPT una persona concisa.",
-    hint_knowledge: "Notas de conocimiento: hechos que la IA puede citar—lugares, PNJ, fechas, datos de la nave. Usa viñetas cortas y nombres propios. Evita la prosa y las meta-instrucciones; mantenlas actualizadas.",
-    hint_ignoreSpeaker: "Solo DJ. Si está activado, esta IA no intentará reconocer quién habla (actor/token o nombre de usuario). Las respuestas no se adaptarán al hablante.",
-    settings_enabled_name: "Habilitar respuestas de IA (interruptor general)",
+    counter_used: "{used} caracteres",
+    combined_label: "Total (Personalidad + Conocimientos): {used} / {n}",
+    combined_hint: "Máximo combinado recomendado (según idioma): {n}",
+    focus_hint: "Sugerencia: textos muy largos dispersan al modelo.",
+
+    field_polyglot: "Idioma (Polyglot) [solo DJ]",
+    hint_polyglot:
+      "Glifos/comprensión de Polyglot para esta IA. Las voces las maneja el addon de Polyglot.",
+
+    settings_enabled_name: "Habilitar respuestas de IA (interruptor)",
     settings_openai_name: "Clave API de OpenAI",
     settings_eleven_name: "Clave API de ElevenLabs",
-    settings_gmpreview_name: "DJ: previsualizar voces de IA",
-    settings_gmpreview_hint: "Si está activado, el DJ también escucha la TTS. (Solo DJ.)",
+    settings_gmpreview_name: "DJ: previsualizar voces",
+    settings_gmpreview_hint: "El DJ también oye TTS (solo DJ).",
+
     ui_language: "Idioma de la interfaz",
-    ui_language_hint: "Cambia etiquetas y ayudas de este módulo.",
-    ui_language_auto: "Auto (usar Foundry)",
+    ui_language_hint: "Cambiar etiquetas y ayudas.",
+    ui_language_auto: "Auto (Foundry)",
+
     slider_label: "Límite de longitud de respuesta",
-    slider_hint: "Límite global por respuesta. Rango sugerido: 200–1.200 caracteres. Valor por defecto: 600.",
+    slider_hint: "Sugerido: 200–1.200. Por defecto 600.",
+
     field_enabled: "Activado",
     field_nameTrigger: "Nombre / Disparador",
     field_actorSpeakAs: "Hablar como Actor",
     field_voiceId: "ID de voz de ElevenLabs",
     field_personality: "Personalidad",
     field_knowledge: "Notas de conocimiento",
-    field_access: "Acceso (nombres de jugadores o ALL)",
+    field_access: "Acceso (nombres o ALL)",
     field_ignoreSpeaker: "DJ: ignorar identidad del hablante"
   },
   ja: {
-    counter_characters: "推奨最大文字数: {n}",
-    combined_label: "合計（人格 + ナレッジ）: {n} 文字",
-    focus_hint: "ヒント：長すぎる文章はモデルの集中を失わせます。要点を簡潔に。",
-    hint_personality: "人格：このAIの話し方や振る舞いの指示。簡潔で実行可能に—役割、口調、制約（例：艦の知識のみ・不確実なら控える）、厳守事項。ヒント：ChatGPTに短いペルソナ案を作らせて貼り付け。",
-    hint_knowledge: "ナレッジ：AIが引用できる事実のメモ—場所、NPC、日付、艦のデータ。短い箇条書きと固有名詞を使用。散文やメタ指示は避け、最新に保つ。",
-    hint_ignoreSpeaker: "GM専用。ON の場合、このAIは話者（アクター/トークンやユーザー名）を認識しません。返答は話者に合わせません。",
+    counter_used: "{used} 文字",
+    combined_label: "合計（人格 + ナレッジ）: {used} / {n}",
+    combined_hint: "推奨合計上限（言語により変動）: {n}",
+    focus_hint: "ヒント：長すぎる文章は集中を失わせます。",
+
+    field_polyglot: "言語（Polyglot）【GM専用】",
+    hint_polyglot: "このAIのPolyglotグリフ/理解。音声はPolyglotアドオンで処理。",
+
     settings_enabled_name: "AI応答を有効化（緊急停止）",
     settings_openai_name: "OpenAI APIキー",
     settings_eleven_name: "ElevenLabs APIキー",
     settings_gmpreview_name: "GM：AI音声をプレビュー",
-    settings_gmpreview_hint: "ON の場合、GM もTTSを聞きます。（GM限定）",
+    settings_gmpreview_hint: "GMもTTSを聞きます（GMのみ）。",
+
     ui_language: "UI 言語",
-    ui_language_hint: "このモジュールのラベルとヘルプを切り替えます。",
-    ui_language_auto: "自動（Foundryに合わせる）",
+    ui_language_hint: "本モジュールの表示を変更。",
+    ui_language_auto: "自動（Foundry）",
+
     slider_label: "AIの回答文字数上限",
-    slider_hint: "1回答の上限。推奨範囲：200～1,200 文字。既定値 600（簡潔）。",
+    slider_hint: "推奨範囲：200～1,200（既定 600）。",
+
     field_enabled: "有効",
     field_nameTrigger: "名前 / トリガー",
     field_actorSpeakAs: "話すアクター",
     field_voiceId: "ElevenLabs Voice ID",
     field_personality: "人格",
     field_knowledge: "ナレッジ",
-    field_access: "アクセス（プレイヤー名 または ALL）",
+    field_access: "アクセス（プレイヤー名 or ALL）",
     field_ignoreSpeaker: "GM：話者認識を無効化"
   }
 };
@@ -193,60 +295,40 @@ function t(key, repl = {}) {
   return Object.entries(repl).reduce((s, [k, v]) => s.replaceAll(`{${k}}`, v), base);
 }
 
-/* --------------- SETTINGS (register at setup so we know if user is GM) --------------- */
-Hooks.once("setup", () => {
-  console.log("[NOVA] init (clean)");
+/* ---------- language-based combined recommendation ---------- */
+function recommendedCombinedMaxChars() {
+  const cpt = { en: 4.0, fr: 3.2, de: 4.0, es: 3.6, ja: 2.0 };
+  const lang = getUILang();
+  const per = cpt[lang] ?? cpt.en;
+  const tokensBudget = 1000;
+  return Math.round(per * tokensBudget);
+}
 
+/* --------------- SETTINGS --------------- */
+Hooks.once("setup", () => {
   const isGM = !!game.user?.isGM;
   const gmOnly = { scope: "world", config: isGM, restricted: true };
   const gmOnlyClient = { scope: "client", config: isGM, restricted: true };
 
   game.settings.register(MODULE_ID, "enabled", {
-    ...gmOnly,
-    name: "Enable AI Responses (Kill Switch)",
-    type: Boolean,
-    default: true
+    ...gmOnly, name: "Enable AI Responses (Kill Switch)", type: Boolean, default: true
   });
-
   game.settings.register(MODULE_ID, "openaiKey", {
-    ...gmOnly,
-    name: "OpenAI API Key",
-    type: String,
-    default: "",
-    secret: true
+    ...gmOnly, name: "OpenAI API Key", type: String, default: "", secret: true
   });
-
   game.settings.register(MODULE_ID, "elevenKey", {
-    ...gmOnly,
-    name: "ElevenLabs API Key",
-    type: String,
-    default: "",
-    secret: true
+    ...gmOnly, name: "ElevenLabs API Key", type: String, default: "", secret: true
   });
-
   game.settings.register(MODULE_ID, "gmPreviewTTS", {
-    ...gmOnly,
-    name: "GM: Preview AI voices",
-    type: Boolean,
-    default: false
+    ...gmOnly, name: "GM: Preview AI voices", type: Boolean, default: false
   });
-
-  // Client-facing language selector (GM-only UI; players don't see the category at all)
   game.settings.register(MODULE_ID, "uiLanguage", {
     ...gmOnlyClient,
     name: "UI Language",
     type: String,
     default: "auto",
-    choices: {
-      auto: "Auto (use Foundry)",
-      en: "English",
-      fr: "Français",
-      de: "Deutsch",
-      es: "Español",
-      ja: "日本語"
-    }
+    choices: { auto: "Auto (use Foundry)", en: "English", fr: "Français", de: "Deutsch", es: "Español", ja: "日本語" }
   });
-
   game.settings.register(MODULE_ID, "answerCharLimit", {
     ...gmOnly,
     name: "AI Answer Length Limit",
@@ -256,58 +338,25 @@ Hooks.once("setup", () => {
   });
 
   for (let i = 1; i <= 8; i++) {
-    game.settings.register(MODULE_ID, `ai${i}Enabled`, {
-      ...gmOnly,
-      name: `AI #${i} — Enabled`,
-      type: Boolean,
-      default: i === 1
+    game.settings.register(MODULE_ID, `ai${i}Enabled`, { ...gmOnly, name: `AI #${i} — Enabled`, type: Boolean, default: i === 1 });
+    game.settings.register(MODULE_ID, `ai${i}Name`, { ...gmOnly, name: `AI #${i} — Name / Trigger`, type: String, default: i === 1 ? "Nova" : "" });
+    game.settings.register(MODULE_ID, `ai${i}ActorName`, { ...gmOnly, name: `AI #${i} — Actor to Speak As`, type: String, default: i === 1 ? "NOVA" : "" });
+    game.settings.register(MODULE_ID, `ai${i}VoiceId`, { ...gmOnly, name: `AI #${i} — ElevenLabs Voice ID`, type: String, default: "" });
+    game.settings.register(MODULE_ID, `ai${i}Prompt`, { ...gmOnly, name: `AI #${i} — Personality`, type: String, default: "" });
+    game.settings.register(MODULE_ID, `ai${i}Knowledge`, { ...gmOnly, name: `AI #${i} — Knowledge Notes`, type: String, default: "" });
+    game.settings.register(MODULE_ID, `ai${i}AccessList`, { ...gmOnly, name: `AI #${i} — Access (Player Names or ALL)`, type: String, default: "ALL" });
+
+    // We register with fallback choices; UI will override if addon supplies a list.
+    const polyChoices = {}; for (const [v, label] of POLYGLOT_BASE_CHOICES) polyChoices[v] = label;
+    game.settings.register(MODULE_ID, `ai${i}PolyglotLang`, {
+      ...gmOnly, name: `AI #${i} — Language (Polyglot)`, type: String, default: "none", choices: polyChoices
     });
-    game.settings.register(MODULE_ID, `ai${i}Name`, {
-      ...gmOnly,
-      name: `AI #${i} — Name / Trigger`,
-      type: String,
-      default: i === 1 ? "Nova" : ""
-    });
-    game.settings.register(MODULE_ID, `ai${i}ActorName`, {
-      ...gmOnly,
-      name: `AI #${i} — Actor to Speak As`,
-      type: String,
-      default: i === 1 ? "NOVA" : ""
-    });
-    game.settings.register(MODULE_ID, `ai${i}VoiceId`, {
-      ...gmOnly,
-      name: `AI #${i} — ElevenLabs Voice ID`,
-      type: String,
-      default: ""
-    });
-    game.settings.register(MODULE_ID, `ai${i}Prompt`, {
-      ...gmOnly,
-      name: `AI #${i} — Personality`,
-      type: String,
-      default: ""
-    });
-    game.settings.register(MODULE_ID, `ai${i}Knowledge`, {
-      ...gmOnly,
-      name: `AI #${i} — Knowledge Notes`,
-      type: String,
-      default: ""
-    });
-    game.settings.register(MODULE_ID, `ai${i}AccessList`, {
-      ...gmOnly,
-      name: `AI #${i} — Access (Player Names or ALL)`,
-      type: String,
-      default: "ALL"
-    });
-    game.settings.register(MODULE_ID, `ai${i}IgnoreSpeaker`, {
-      ...gmOnly,
-      name: `AI #${i} — GM: Ignore speaker identity`,
-      type: Boolean,
-      default: false
-    });
+
+    game.settings.register(MODULE_ID, `ai${i}IgnoreSpeaker`, { ...gmOnly, name: `AI #${i} — GM: Ignore speaker identity`, type: Boolean, default: false });
   }
 });
 
-/* --------------- HELPERS --------------- */
+/* --------------- helpers --------------- */
 function readAI(i) {
   const g = (k) => game.settings.get(MODULE_ID, `ai${i}${k}`);
   return {
@@ -319,28 +368,22 @@ function readAI(i) {
     prompt: g("Prompt") || "",
     knowledge: g("Knowledge") || "",
     accessList: (g("AccessList") || "ALL").trim(),
+    polyglotLang: (g("PolyglotLang") || "none").trim(),
     ignoreSpeaker: !!g("IgnoreSpeaker")
   };
 }
-function getAllAIs() {
-  const out = [];
-  for (let i = 1; i <= 8; i++) out.push(readAI(i));
-  return out.filter((a) => a.enabled && a.name);
-}
-function gmUserIds() { return game.users.filter((u) => u.isGM).map((u) => u.id); }
-function everyoneUserIds() { return game.users.map((u) => u.id); }
-
+function getAllAIs() { const arr = []; for (let i = 1; i <= 8; i++) arr.push(readAI(i)); return arr.filter(a => a.enabled && a.name); }
+function gmUserIds() { return game.users.filter(u => u.isGM).map(u => u.id); }
+function everyoneUserIds() { return game.users.map(u => u.id); }
 function resolveAccessUserIds(accessList, { includeGMs = false } = {}) {
   if (!accessList || accessList.trim().toUpperCase() === "ALL") {
-    const ids = everyoneUserIds();
-    return includeGMs ? Array.from(new Set([...ids, ...gmUserIds()])) : ids;
+    const ids = everyoneUserIds(); return includeGMs ? Array.from(new Set([...ids, ...gmUserIds()])) : ids;
   }
-  const tokens = accessList.split(",").map((t) => t.trim()).filter(Boolean);
+  const tokens = accessList.split(",").map(t => t.trim()).filter(Boolean);
   const found = new Set();
   for (const tk of tokens) {
     const byId = game.users.get(tk); if (byId) { found.add(byId.id); continue; }
-    const byName = game.users.find((u) => u.name?.toLowerCase() === tk.toLowerCase());
-    if (byName) { found.add(byName.id); continue; }
+    const byName = game.users.find(u => u.name?.toLowerCase() === tk.toLowerCase()); if (byName) { found.add(byName.id); continue; }
     const actor = game.actors.getName(tk);
     if (actor) {
       const perm = actor.ownership ?? actor.data?.permission ?? {};
@@ -353,43 +396,42 @@ function resolveAccessUserIds(accessList, { includeGMs = false } = {}) {
 }
 function aiIsPublic(ai) { return ai.accessList.toUpperCase() === "ALL"; }
 function userHasAccess(ai, user) { return user?.isGM || aiIsPublic(ai) || resolveAccessUserIds(ai.accessList).includes(user.id); }
-function recipientsForAI(ai, includeGMs = true) {
-  return aiIsPublic(ai) ? everyoneUserIds() : resolveAccessUserIds(ai.accessList, { includeGMs });
-}
-function findActorByName(n) { return game.actors.getName(n) ?? null; }
-function randId() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-
-/* Speaker resolver */
+function recipientsForAI(ai, includeGMs = true) { return aiIsPublic(ai) ? everyoneUserIds() : resolveAccessUserIds(ai.accessList, { includeGMs }); }
 function identifySpeaker(userId) {
   const user = game.users.get(userId) || game.user;
   const userName = user?.name || "Unknown User";
-
   let token = null;
   try {
     const controlled = canvas?.tokens?.controlled || [];
     const owned = controlled.filter(t => t?.actor?.ownership?.[user.id] >= (CONST.DOCUMENT_OWNERSHIP_LEVELS?.LIMITED ?? 1));
     token = owned[0] || controlled[0] || null;
   } catch {}
-
   const sp = ChatMessage.getSpeaker({ user });
-  if (!token && sp?.token) {
-    token = canvas?.tokens?.placeables?.find(t => t?.id === sp.token) || null;
-  }
-
+  if (!token && sp?.token) token = canvas?.tokens?.placeables?.find(t => t?.id === sp.token) || null;
   let actor = null;
   if (sp?.actor) actor = game.actors?.get(sp.actor) || null;
   if (!actor && token?.actor) actor = token.actor;
   if (!actor && user?.character) actor = game.actors?.get(user.character) || null;
-
   const actorName = actor?.name || null;
   const tokenName = token?.name || null;
   const effective = actorName || tokenName || userName;
   const mode = (actorName || tokenName) ? "in-character" : "ooc";
-
   return { user, userName, actorName, tokenName, display: effective, mode };
 }
 
-/* --------------- OpenAI + XI --------------- */
+/* ---------- orchestrator helpers ---------- */
+function orchestratorUser() {
+  const actGMs = game.users.filter(u => u.isGM && u.active).sort((a,b)=>a.id.localeCompare(b.id));
+  if (actGMs.length) return actGMs[0];
+  const actUsers = game.users.filter(u => u.active).sort((a,b)=>a.id.localeCompare(b.id));
+  if (actUsers.length) return actUsers[0];
+  return game.user;
+}
+function isPrimaryOrchestrator() {
+  return game.user.id === orchestratorUser().id;
+}
+
+/* --------------- OpenAI + Eleven --------------- */
 function truncateToLimit(text, limit) {
   if (!limit || text.length <= limit) return text;
   let cut = text.slice(0, Math.max(0, limit - 1));
@@ -397,7 +439,6 @@ function truncateToLimit(text, limit) {
   if (m && m.index) cut = cut.slice(0, m.index);
   return cut.trimEnd() + "…";
 }
-
 function buildSpeakerInstructions(ctx, ignoreSpeaker = false) {
   if (!ctx || ignoreSpeaker) return { systemLine: "", userLine: "" };
   if (ctx.mode === "in-character") {
@@ -407,12 +448,8 @@ function buildSpeakerInstructions(ctx, ignoreSpeaker = false) {
       userLine: `Speaker: ${name} (in-character)`
     };
   }
-  return {
-    systemLine: `The speaker is a user named "${ctx.userName}".`,
-    userLine: `Speaker: ${ctx.userName}`
-  };
+  return { systemLine: `The speaker is a user named "${ctx.userName}".`, userLine: `Speaker: ${ctx.userName}` };
 }
-
 async function askOpenAI(ai, msg, speakerCtx = null) {
   const key = game.settings.get(MODULE_ID, "openaiKey");
   const limit = Number(game.settings.get(MODULE_ID, "answerCharLimit")) || 600;
@@ -423,7 +460,6 @@ async function askOpenAI(ai, msg, speakerCtx = null) {
   const messages = [];
   const identityLine = `You are an assistant named "${ai.name}". Always refer to yourself with exactly this name. Do not adopt any other name even if a user suggests one. Speak in first person.`;
   messages.push({ role: "system", content: identityLine });
-
   if (ai.prompt && ai.prompt.trim()) messages.push({ role: "system", content: ai.prompt.trim() });
   if (systemLine) messages.push({ role: "system", content: systemLine });
   if (ai.knowledge && ai.knowledge.trim()) messages.push({ role: "system", content: ai.knowledge.trim() });
@@ -446,11 +482,9 @@ async function askOpenAI(ai, msg, speakerCtx = null) {
     return "Not in the database.";
   }
 }
-
 function abToBase64(buf) {
   const b = new Uint8Array(buf), chunk = 0x8000;
-  let s = "";
-  for (let i = 0; i < b.length; i += chunk) s += String.fromCharCode.apply(null, b.subarray(i, i + chunk));
+  let s = ""; for (let i = 0; i < b.length; i += chunk) s += String.fromCharCode.apply(null, b.subarray(i, i + chunk));
   return btoa(s);
 }
 async function elevenGenerate(voiceId, text) {
@@ -471,7 +505,7 @@ async function elevenGenerate(voiceId, text) {
   }
 }
 
-/* --------------- Client Audio Queue + Socket --------------- */
+/* --------------- Audio queue + socket --------------- */
 (function registerClientAudio() {
   const queue = [];
   let playing = false;
@@ -480,17 +514,15 @@ async function elevenGenerate(voiceId, text) {
   function enqueue({ b64, mime = "audio/mpeg", volume = 0.9 }) {
     try {
       if (game.user.isGM && !game.settings.get(MODULE_ID, "gmPreviewTTS")) return;
-      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
       const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
       queue.push({ url, volume });
       playNext();
     } catch (e) { console.error("NOVA | enqueue error", e); }
   }
-
   async function playNext() {
     if (playing) return;
-    const next = queue.shift();
-    if (!next) return;
+    const next = queue.shift(); if (!next) return;
     playing = true;
     try {
       const a = new Audio(next.url);
@@ -503,7 +535,6 @@ async function elevenGenerate(voiceId, text) {
       playing = false; playNext();
     }
   }
-
   function installUnlockOnce() {
     const SILENT = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
     const doIt = () => {
@@ -541,7 +572,6 @@ async function elevenGenerate(voiceId, text) {
         if (audio?.b64) enqueue(audio);
         return;
       }
-
       if (payload.type === "tts-chunk") {
         const { id, seq, total, mime } = payload;
         if (!store[id]) store[id] = { total, parts: new Map(), mime: mime || "audio/mpeg", done: false };
@@ -549,7 +579,6 @@ async function elevenGenerate(voiceId, text) {
         tryAssemble(id);
         return;
       }
-
       if (payload.type === "tts-done") {
         const { id, mime } = payload;
         if (!store[id]) store[id] = { total: 0, parts: new Map(), mime: mime || "audio/mpeg", done: true };
@@ -562,20 +591,20 @@ async function elevenGenerate(voiceId, text) {
   window.novaEnqueue = enqueue;
 })();
 
-/* --------------- TTS send (chunked) --------------- */
+/* --------------- send TTS --------------- */
 const CHUNK_SIZE = 12000;
 function sendTTSBase64To(userIds, audio) {
   if (!audio?.b64) return;
   const me = game.user.id;
   const audience = Array.isArray(userIds) ? userIds.filter(Boolean) : [];
   if (!audience.includes(me)) audience.push(me);
-  const others = audience.filter((id) => id !== me);
+  const others = audience.filter(id => id !== me);
   const total = Math.ceil(audio.b64.length / CHUNK_SIZE);
 
   if (window.novaEnqueue) window.novaEnqueue(audio);
 
   if (others.length && total > 0) {
-    const id = randId();
+    const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
     for (let i = 0; i < total; i++) {
       const chunk = audio.b64.slice(i * CHUNK_SIZE, i * CHUNK_SIZE + CHUNK_SIZE);
       game.socket.emit(`module.${MODULE_ID}`, { type: "tts-chunk", id, seq: i, total, chunk, userIds: others, mime: audio.mime });
@@ -584,41 +613,56 @@ function sendTTSBase64To(userIds, audio) {
   }
 }
 
+/* ========== mention matcher (robust for GM & players) ========== */
+function buildMentionTesters() {
+  const list = getAllAIs().map(a => a.name).filter(Boolean);
+  const testers = [];
+  for (const name of list) {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const rx = new RegExp(`(?:@|["(\\s]|^)${escaped}(?:[)!"',.:;?\\s]|$)`, "i");
+    testers.push({ name, test: (s) => rx.test(s) });
+  }
+  return testers;
+}
+function findMentionedAIs(raw) {
+  const testers = buildMentionTesters();
+  const found = [];
+  for (const t of testers) if (t.test(raw)) found.push(t.name.toLowerCase());
+  return found;
+}
+
 /* --------------- Chat glue --------------- */
 async function postAIReply(ai, htmlText, whisperToUserIds = null) {
   const actor = ai.actorName ? game.actors.getName(ai.actorName) : null;
   const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
-
   const TextEditorNS = window.__NOVA_TextEditor__ || foundry?.applications?.ux?.TextEditor?.implementation;
-  const html = TextEditorNS
-    ? await TextEditorNS.enrichHTML(htmlText || "", { async: true })
-    : (htmlText || "");
-
-  const data = { speaker, flags: { [MODULE_ID]: { aiResponse: true } }, content: html };
+  const html = TextEditorNS ? await TextEditorNS.enrichHTML(htmlText || "", { async: true }) : (htmlText || "");
+  // PATCH: include aiSlot for addon fallback
+  const data = { speaker, flags: { [MODULE_ID]: { aiResponse: true, aiSlot: ai.index } }, content: html };
   if (Array.isArray(whisperToUserIds) && whisperToUserIds.length) data.whisper = whisperToUserIds;
   await ChatMessage.create(data);
 }
 
 Hooks.once("ready", () => {
-  console.log("[NOVA] ready — inert; doing nothing.");
   if (!game.settings.get(MODULE_ID, "enabled")) return;
 
+  /* ---- orchestrated handlers (run ONLY on orchestrator) ---- */
   async function handlePublic(raw, userId) {
     const user = game.users.get(userId) || game.user;
-    if (/^\/w\s+(?:"[^"]+"|\S+)\s+/i.test(raw)) return;
+    const lower = (raw || "");
+    const mentioned = findMentionedAIs(lower);
 
-    const lower = (raw || "").toLowerCase();
-    const found = [];
+    const seen = new Set();
+    const toRun = [];
     for (const ai of getAllAIs()) {
-      const idx = lower.indexOf(ai.name.toLowerCase());
-      if (idx >= 0) found.push({ ai, idx });
+      const nm = ai.name.toLowerCase();
+      if (mentioned.includes(nm) && !seen.has(nm)) { seen.add(nm); toRun.push(ai); }
     }
-    if (!found.length) return;
-    found.sort((a, b) => a.idx - b.idx);
+    if (!toRun.length) return;
 
     const ctx = identifySpeaker(userId);
 
-    for (const { ai } of found) {
+    for (const ai of toRun) {
       const text = await askOpenAI(ai, raw, ctx);
       if (aiIsPublic(ai)) {
         await postAIReply(ai, text, null);
@@ -633,11 +677,27 @@ Hooks.once("ready", () => {
     }
   }
 
+  async function handleAssigned(aiName, raw, userId) {
+    const user = game.users.get(userId) || game.user;
+    const ai = getAllAIs().find(a => a.name.toLowerCase() === String(aiName || "").toLowerCase());
+    if (!ai) return;
+    if (!userHasAccess(ai, user)) return;
+
+    const ctx = identifySpeaker(userId);
+    const text = await askOpenAI(ai, raw, ctx);
+
+    const aud = recipientsForAI(ai, true);
+    await postAIReply(ai, text, aud);
+
+    const audio = await elevenGenerate(ai.voiceId, text);
+    if (audio) sendTTSBase64To(aud, audio);
+  }
+
   async function handleWhisper(target, body, userId) {
-    const map = {};
-    for (const ai of getAllAIs()) map[ai.name.toLowerCase()] = ai;
+    const map = {}; for (const ai of getAllAIs()) map[ai.name.toLowerCase()] = map[ai.name.toLowerCase()] ?? ai;
     const ai = map[(target || "").toLowerCase()];
     if (!ai) return;
+
     const user = game.users.get(userId) || game.user;
     if (!userHasAccess(ai, user)) return;
 
@@ -656,11 +716,31 @@ Hooks.once("ready", () => {
     if (audio) sendTTSBase64To(audience, audio);
   }
 
+  /* ---- socket listener: only orchestrator actually runs logic ---- */
+  game.socket.on(`module.${MODULE_ID}`, (payload) => {
+    if (!payload) return;
+    if (!isPrimaryOrchestrator()) return;
+
+    if (payload.type === "ai-public") {
+      handlePublic(payload.raw, payload.userId);
+    } else if (payload.type === "ai-whisper") {
+      handleWhisper(payload.target, payload.body, payload.userId);
+    } else if (payload.type === "ai-assigned") {
+      handleAssigned(payload.aiName, payload.raw, payload.userId);
+    }
+  });
+
+  /* ---- single chatMessage hook (GM runs locally; others emit) ---- */
   Hooks.on("chatMessage", (log, message, chatData) => {
     const raw = (message || "").trim();
     if (!raw) return true;
 
+    // Prevent recursion on AI replies
+    if (chatData?.flags?.[MODULE_ID]?.aiResponse) return true;
+
+    // NOVA tools
     if (/^\/novatest\b/i.test(raw)) {
+      if (!isPrimaryOrchestrator()) return false;
       (async () => {
         const say = raw.replace(/^\/novatest\b\s*/i, "").trim() || "This is a NOVA voice test.";
         const voiceId = pickFirstVoiceId();
@@ -670,8 +750,8 @@ Hooks.once("ready", () => {
       })();
       return false;
     }
-
     if (/^\/novaself\b/i.test(raw)) {
+      if (!isPrimaryOrchestrator()) return false;
       (async () => {
         const say = raw.replace(/^\/novaself\b\s*/i, "").trim();
         if (!say) { ui.notifications?.warn?.("Usage: /novaself <text>"); return; }
@@ -682,264 +762,338 @@ Hooks.once("ready", () => {
       })();
       return false;
     }
-
     if (raw.toLowerCase() === "/novabeep") {
+      if (!isPrimaryOrchestrator()) return false;
       const b64 = "UklGRlgAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAIAAAAAP//////////AP///wAA////AAD///7/////AAAA////AP////////8AAP///wAA//////////////////////////8A";
       new Audio(`data:audio/wav;base64,${b64}`).play().catch(() => {});
       return false;
     }
 
-    if (chatData?.flags?.[MODULE_ID]?.aiResponse) return true;
-    handlePublic(raw, chatData.user);
+    // Whisper to AI? (/w "AI Name" message)
+    const w = raw.match(/^\/w\s+(?:"([^"]+)"|(\S+))\s+([\\s\\S]+)$/i);
+    if (w) {
+      const target = (w[1] || w[2] || "").trim();
+      const body = (w[3] || "").trim();
+      const aiNames = getAllAIs().map(a => a.name.toLowerCase());
+      if (aiNames.includes(target.toLowerCase())) {
+        if (game.user.isGM) {
+          (async () => { await handleWhisper(target, body, game.user.id); })();
+        } else {
+          game.socket.emit(`module.${MODULE_ID}`, { type: "ai-whisper", target, body, userId: game.user.id });
+        }
+        return false;
+      }
+      return true;
+    }
+
+    // Public mention of an AI?
+    const mentioned = findMentionedAIs(raw);
+    if (mentioned.length) {
+      if (game.user.isGM) {
+        (async () => { await handlePublic(raw, game.user.id); })();
+      } else {
+        game.socket.emit(`module.${MODULE_ID}`, { type: "ai-public", raw, userId: game.user.id });
+      }
+      return true;
+    }
+
+    // Assigned-path (no name needed)
+    if (!raw.startsWith("/")) {
+      const myId = game.user.id;
+      const assigned = getAllAIs()
+        .filter(ai => !aiIsPublic(ai))
+        .filter(ai => resolveAccessUserIds(ai.accessList).includes(myId));
+      for (const ai of assigned) {
+        if (game.user.isGM) {
+          (async () => { await handleAssigned(ai.name, raw, myId); })();
+        } else {
+          game.socket.emit(`module.${MODULE_ID}`, {
+            type: "ai-assigned",
+            aiName: ai.name,
+            raw,
+            userId: myId
+          });
+        }
+      }
+    }
+
     return true;
   });
 
-  Hooks.on("chatMessage", (log, message, chatData) => {
-    const raw = (message || "").trim();
-    if (!raw) return true;
-    const m = raw.match(/^\/w\s+(?:"([^"]+)"|(\S+))\s+([\s\S]+)$/i);
-    if (!m) return true;
-    handleWhisper((m[1] || m[2] || "").trim(), (m[3] || "").trim(), chatData.user);
-    return false;
-  });
+  // On ready, emit the first Polyglot update so the addon can latch on
+  emitPolyglotUpdate();
 });
 
-/* ===================================================================
-   UI injection (GM polish; player visibility already disabled by setup)
-   =================================================================== */
+/* ============================
+   GM UI polish & counters
+   ============================ */
 (() => {
   const MOD = MODULE_ID;
 
-  function aiRowFor(scope, name) {
+  function rowFor(scope, name) {
     const sel = `[name="${MOD}.${name}"]`;
     const el = scope.querySelector?.(sel) || document.querySelector(sel);
     return el?.closest?.(".form-group, .setting, .setting-row") || null;
   }
-  function aiRows(scope, i) {
+  function rowsForAI(scope, i) {
     const keys = [
-      `ai${i}Enabled`,`ai${i}Name`,`ai${i}ActorName`,`ai${i}VoiceId`,
-      `ai${i}Prompt`,`ai${i}Knowledge`,`ai${i}AccessList`,`ai${i}IgnoreSpeaker`
+      `ai${i}Enabled`, `ai${i}Name`, `ai${i}ActorName`, `ai${i}VoiceId`,
+      `ai${i}Prompt`, `ai${i}Knowledge`, `ai${i}AccessList`,
+      `ai${i}PolyglotLang`, `ai${i}IgnoreSpeaker`
     ];
-    return keys.map((k) => aiRowFor(scope, k)).filter(Boolean);
+    return keys.map(k => rowFor(scope, k)).filter(Boolean);
   }
-
-  function ensureHeader(scope, i) {
-    const rows = aiRows(scope, i); if (!rows.length) return;
+  function header(scope, i) {
+    const rows = rowsForAI(scope, i); if (!rows.length) return;
     const first = rows[0]; const parent = first.parentElement;
-
     if (parent.querySelector(`.nova-ai-header[data-i="${i}"]`)) return;
 
-    const header = document.createElement("div");
-    header.className = "nova-ai-header"; header.dataset.i = String(i);
-    Object.assign(header.style, {
-      margin: "12px 0 4px", padding: "6px 8px",
-      background: "rgba(255,255,255,0.04)",
-      border: "1px solid rgba(255,255,255,0.07)",
-      borderRadius: "6px", cursor: "pointer",
-      display: "flex", alignItems: "center", gap: "8px", userSelect: "none"
-    });
-
+    const h = document.createElement("div");
+    h.className = "nova-ai-header"; h.dataset.i = String(i);
+    Object.assign(h.style, { margin: "12px 0 4px", padding: "6px 8px", background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.07)", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", userSelect: "none" });
     const chev = document.createElement("span"); chev.textContent = "▾"; chev.style.opacity = ".85";
     const title = document.createElement("span"); title.style.fontWeight = "600"; title.textContent = `AI #${i}`;
-    header.append(chev, title); parent.insertBefore(header, first);
+    h.append(chev, title); parent.insertBefore(h, first);
 
-    const nameInput =
-      scope.querySelector?.(`[name="${MOD}.ai${i}Name"]`) ||
-      document.querySelector(`[name="${MOD}.ai${i}Name"]`);
-    const setTitle = () => {
-      const n = (nameInput?.value || "").trim();
-      title.textContent = n ? `AI #${i} — ${n}` : `AI #${i}`;
-    };
+    const nameInput = scope.querySelector?.(`[name="${MOD}.ai${i}Name"]`) || document.querySelector(`[name="${MOD}.ai${i}Name"]`);
+    const setTitle = () => { const n = (nameInput?.value || "").trim(); title.textContent = n ? `AI #${i} — ${n}` : `AI #${i}`; };
     if (nameInput) { nameInput.addEventListener("input", setTitle); nameInput.addEventListener("change", setTitle); }
     setTitle();
 
     const LS_KEY = `nova-ai-collapsed-${i}`;
-    const apply = (collapsed) => {
-      chev.textContent = collapsed ? "▸" : "▾";
-      rows.forEach((r) => (r.style.display = collapsed ? "none" : ""));
-      localStorage.setItem(LS_KEY, collapsed ? "1" : "0");
-    };
+    const apply = (collapsed) => { chev.textContent = collapsed ? "▸" : "▾"; rows.forEach(r => (r.style.display = collapsed ? "none" : "")); localStorage.setItem(LS_KEY, collapsed ? "1" : "0"); };
     apply(localStorage.getItem(LS_KEY) === "1");
-    header.addEventListener("click", () => apply(rows[0].style.display !== "none"));
+    h.addEventListener("click", () => apply(rows[0].style.display !== "none"));
   }
-
-  function ensureLabelHint(row, text) {
+  function labelHint(row, text) {
     if (!row) return;
     const label = row.querySelector("label"); if (!label) return;
     let hint = label.querySelector(".nova-label-hint");
     if (!hint) {
       hint = document.createElement("div");
       hint.className = "nova-label-hint";
-      Object.assign(hint.style, {
-        marginTop: "6px", fontSize: "11.5px", lineHeight: "1.25",
-        opacity: ".78", display: "block"
-      });
+      Object.assign(hint.style, { marginTop: "6px", fontSize: "11.5px", lineHeight: "1.25", opacity: ".78", display: "block" });
       label.appendChild(hint);
     }
     hint.textContent = text;
   }
-
-  function ensureTextarea(el) {
-    if (!el) return null;
-    if (el.tagName.toLowerCase() === "textarea") return el;
-    const tArea = document.createElement("textarea");
-    tArea.name = el.name; tArea.value = el.value ?? ""; tArea.className = el.className || "";
-    el.replaceWith(tArea);
-    return tArea;
-  }
-  function styleTextarea(t) {
-    t.classList.add("nova-up");
-    Object.assign(t.style, { width: "100%", minHeight: "260px", resize: "both", boxSizing: "border-box", display: "block" });
-    t.rows = 14;
-  }
-
-  function getCounterFor(ta) {
-    const key = ta.name;
-    const container =
-      ta.parentElement || ta.closest(".form-fields") || ta.closest(".form-group,.setting") || ta;
-    let ctr = container.querySelector(`.nova-ctr[data-for="${CSS.escape(key)}"]`);
-    if (!ctr) {
-      ctr = document.createElement("div");
-      ctr.className = "nova-ctr"; ctr.dataset.for = key;
-      Object.assign(ctr.style, { marginTop: "6px", fontSize: "12px", opacity: ".85", display: "block", flexBasis: "100%" });
-      ta.insertAdjacentElement("afterend", ctr);
-    }
-    return ctr;
-  }
-  function updateCounter(ctr, n) { if (ctr) ctr.textContent = t("counter_characters", { n: Number(n).toLocaleString() }); }
-
-  function getCombinedUnder(anchor, i) {
-    const container =
-      anchor.parentElement || anchor.closest(".form-fields") || anchor.closest(".form-group,.setting") || anchor;
-    let combined = container.querySelector(`.nova-combined[data-i="${i}"]`);
-    if (!combined) {
-      combined = document.createElement("div");
-      combined.className = "nova-combined"; combined.dataset.i = String(i);
-      Object.assign(combined.style, { marginTop: "8px", fontSize: "12px", opacity: ".85", display: "block", flexBasis: "100%" });
-      anchor.insertAdjacentElement("afterend", combined);
-    }
-    let hint = combined.nextElementSibling;
-    if (!hint || !hint.classList || !hint.classList.contains("nova-hint")) {
-      hint = document.createElement("div");
-      hint.className = "nova-hint";
-      Object.assign(hint.style, { marginTop: "4px", fontSize: "11px", opacity: ".7", display: "block" });
-      combined.insertAdjacentElement("afterend", hint);
-    }
-    hint.textContent = t("focus_hint");
-    return combined;
-  }
-  function updateCombined(combined, n) { if (combined) combined.textContent = t("combined_label", { n: Number(n).toLocaleString() }); }
-
   function setNotes(row, text) {
     if (!row) return;
-    const label = row.querySelector("label");
     row.querySelectorAll("p.notes, .notes").forEach((el, idx) => { if (idx > 0) el.remove(); });
     let p = row.querySelector("p.notes, .notes");
     if (!p) {
       p = document.createElement("p");
       p.className = "notes";
       Object.assign(p.style, { margin: "6px 0 0 0", fontSize: "12px", lineHeight: "1.3", opacity: ".85" });
-      if (label) label.insertAdjacentElement("afterend", p); else row.appendChild(p);
+      (row.querySelector("label") || row).insertAdjacentElement("afterend", p);
     }
     p.textContent = text;
   }
 
-  function localizeRegisteredRows(scope) {
+  // Turn an <input> into a big <textarea>
+  function ensureBigTextArea(row) {
+    if (!row) return null;
+    let control = row.querySelector("textarea");
+    if (!control) {
+      const input = row.querySelector('input[name]');
+      if (input) {
+        const ta = document.createElement("textarea");
+        ta.name = input.name; ta.value = input.value || ""; ta.placeholder = input.placeholder || "";
+        input.replaceWith(ta);
+        control = ta;
+      }
+    }
+    if (!control) return null;
+    control.rows = Math.max(control.rows || 0, 9);
+    Object.assign(control.style, { minHeight: "220px", resize: "vertical", whiteSpace: "pre-wrap" });
+    return control;
+  }
+
+  function attachCounters(i, promptRow, knowledgeRow) {
+    const combinedLimit = recommendedCombinedMaxChars();
+
+    function makeRightBadge(row) {
+      if (!row) return null;
+      let bad = row.querySelector(".nova-right-badge");
+      if (!bad) {
+        bad = document.createElement("div");
+        bad.className = "nova-right-badge";
+        Object.assign(bad.style, { position: "absolute", right: "6px", top: "4px", fontSize: "11.5px", opacity: ".8", pointerEvents: "none" });
+        row.style.position = "relative";
+        row.querySelector("label")?.appendChild(bad);
+      }
+      return bad;
+    }
+    const pBadge = makeRightBadge(promptRow);
+    const kBadge = makeRightBadge(knowledgeRow);
+
+    let combined = knowledgeRow?.querySelector(".nova-combined-badge");
+    if (!combined && knowledgeRow) {
+      combined = document.createElement("div");
+      combined.className = "nova-combined-badge";
+      Object.assign(combined.style, { position: "absolute", right: "6px", top: "24px", fontSize: "11.5px", opacity: ".8", pointerEvents: "none" });
+      knowledgeRow.style.position = "relative";
+      knowledgeRow.querySelector("label")?.appendChild(combined);
+    }
+
+    const pInput = promptRow ? ensureBigTextArea(promptRow) : null;
+    const kInput = knowledgeRow ? ensureBigTextArea(knowledgeRow) : null;
+
+    if (promptRow) setNotes(promptRow, `${t("focus_hint")} ${t("combined_hint", { n: combinedLimit })}`);
+    if (knowledgeRow) setNotes(knowledgeRow, t("combined_hint", { n: combinedLimit }));
+
+    function update() {
+      const pLen = (pInput?.value || "").length;
+      const kLen = (kInput?.value || "").length;
+      if (pBadge) pBadge.textContent = t("counter_used", { used: pLen });
+      if (kBadge) kBadge.textContent = t("counter_used", { used: kLen });
+      if (combined) combined.textContent = t("combined_label", { used: pLen + kLen, n: combinedLimit });
+    }
+    pInput?.addEventListener("input", update);
+    kInput?.addEventListener("input", update);
+    update();
+  }
+
+  // Apply Polyglot choices to any open settings select elements
+  window.__NOVA_applyPolyglotChoices = function __NOVA_applyPolyglotChoices(scope) {
+    const polyglotActive = !!game.modules.get("polyglot")?.active;
+    for (let i = 1; i <= 8; i++) {
+      const row = (function rowFor(scope, name) {
+        const sel = `[name="${MODULE_ID}.${name}"]`;
+        const el = scope.querySelector?.(sel) || document.querySelector(sel);
+        return el?.closest?.(".form-group, .setting, .setting-row") || null;
+      })(scope, `ai${i}PolyglotLang`);
+      if (!row) continue;
+
+      // hide if Polyglot not active
+      row.style.display = polyglotActive ? "" : "none";
+
+      const select = row.querySelector(`select[name="${MODULE_ID}.ai${i}PolyglotLang"]`);
+      if (!select) continue;
+
+      // Remember the current value from settings
+      const current = game.settings.get(MODULE_ID, `ai${i}PolyglotLang`) || "none";
+
+      // Rebuild options from POLY_STATE.choices (or fallback already in it)
+      select.innerHTML = "";
+      for (const [value, label] of POLY_STATE.choices) {
+        const opt = document.createElement("option");
+        opt.value = value;
+        opt.textContent = label;
+        if (value === current) opt.selected = true;
+        select.appendChild(opt);
+      }
+
+      // Emit update when it changes
+      select.addEventListener("change", () => {
+        emitPolyglotUpdate();
+      });
+    }
+  };
+
+  function localize(scope) {
     const isGM = game.user?.isGM;
 
-    const rowEnabled = aiRowFor(scope, "enabled");
-    rowEnabled?.querySelector("label")?.childNodes.forEach((n, i) => {
-      if (i === 0 && n.nodeType === 3) n.textContent = t("settings_enabled_name");
-    });
-
-    const rowOpenAI = aiRowFor(scope, "openaiKey");
-    rowOpenAI?.querySelector("label")?.childNodes.forEach((n, i) => {
-      if (i === 0 && n.nodeType === 3) n.textContent = t("settings_openai_name");
-    });
-
-    const rowXI = aiRowFor(scope, "elevenKey");
-    rowXI?.querySelector("label")?.childNodes.forEach((n, i) => {
-      if (i === 0 && n.nodeType === 3) n.textContent = t("settings_eleven_name");
-    });
-
-    const rowGM = aiRowFor(scope, "gmPreviewTTS");
+    const rowGM = rowFor(scope, "gmPreviewTTS");
     if (rowGM) {
       if (!isGM) rowGM.style.display = "none";
       const label = rowGM.querySelector("label");
-      label?.childNodes.forEach((n, i) => {
-        if (i === 0 && n.nodeType === 3) n.textContent = t("settings_gmpreview_name");
-      });
-      label?.querySelector(".nova-label-hint")?.remove();
+      label?.childNodes.forEach((n, i) => { if (i === 0 && n.nodeType === 3) n.textContent = t("settings_gmpreview_name"); });
+      labelHint(rowGM, "");
       setNotes(rowGM, t("settings_gmpreview_hint"));
     }
 
-    const rowLang = aiRowFor(scope, "uiLanguage");
+    const rowLang = rowFor(scope, "uiLanguage");
     if (rowLang) {
       if (!isGM) rowLang.style.display = "none";
       else {
         const label = rowLang.querySelector("label");
-        label?.childNodes.forEach((n, i) => {
-          if (i === 0 && n.nodeType === 3) n.textContent = t("ui_language");
-        });
-        label?.querySelector(".nova-label-hint")?.remove();
+        label?.childNodes.forEach((n, i) => { if (i === 0 && n.nodeType === 3) n.textContent = t("ui_language"); });
         setNotes(rowLang, t("ui_language_hint"));
         const select = rowLang.querySelector(`select[name="${MODULE_ID}.uiLanguage"]`);
-        if (select) {
-          const optAuto = select.querySelector('option[value="auto"]');
-          if (optAuto) optAuto.textContent = t("ui_language_auto");
-        }
+        const optAuto = select?.querySelector('option[value="auto"]'); if (optAuto) optAuto.textContent = t("ui_language_auto");
       }
     }
 
-    const rowSlider = aiRowFor(scope, "answerCharLimit");
+    const rowSlider = rowFor(scope, "answerCharLimit");
     if (rowSlider) {
       const label = rowSlider.querySelector("label");
-      label?.childNodes.forEach((n, i) => {
-        if (i === 0 && n.nodeType === 3) n.textContent = t("slider_label");
-      });
-      label?.querySelector(".nova-label-hint")?.remove();
+      label?.childNodes.forEach((n, i) => { if (i === 0 && n.nodeType === 3) n.textContent = t("slider_label"); });
       setNotes(rowSlider, t("slider_hint"));
     }
 
+    const polyglotActive = !!game.modules.get("polyglot")?.active;
+
     for (let i = 1; i <= 8; i++) {
-      const setLabel = (key, locKey) => {
-        const row = aiRowFor(scope, key); if (!row) return;
-        const label = row.querySelector("label"); if (!label) return;
-        label.childNodes.forEach((n, idx) => {
-          if (idx === 0 && n.nodeType === 3) n.textContent = `AI #${i} — ${t(locKey)}`;
-        });
-        if (key === `ai${i}IgnoreSpeaker`) {
+      const setL = (key, locKey, extra) => {
+        const row = rowFor(scope, key); if (!row) return null;
+        const label = row.querySelector("label");
+        label?.childNodes.forEach((n, idx) => { if (idx === 0 && n.nodeType === 3) n.textContent = `AI #${i} — ${t(locKey)}`; });
+        if (extra === "hintIgnore") {
           if (!isGM) row.style.display = "none";
-          else ensureLabelHint(row, t("hint_ignoreSpeaker"));
+          else labelHint(row, t("hint_ignoreSpeaker"));
         }
+        return row;
       };
-      setLabel(`ai${i}Enabled`, "field_enabled");
-      setLabel(`ai${i}Name`, "field_nameTrigger");
-      setLabel(`ai${i}ActorName`, "field_actorSpeakAs");
-      setLabel(`ai${i}VoiceId`, "field_voiceId");
-      setLabel(`ai${i}Prompt`, "field_personality");
-      setLabel(`ai${i}Knowledge`, "field_knowledge");
-      setLabel(`ai${i}AccessList`, "field_access");
-      setLabel(`ai${i}IgnoreSpeaker`, "field_ignoreSpeaker");
+
+      const rEnabled   = setL(`ai${i}Enabled`,   "field_enabled");
+      const rName      = setL(`ai${i}Name`,      "field_nameTrigger");
+      const rActor     = setL(`ai${i}ActorName`, "field_actorSpeakAs");
+      const rVoice     = setL(`ai${i}VoiceId`,   "field_voiceId");
+      const rPrompt    = setL(`ai${i}Prompt`,    "field_personality");
+      const rKnow      = setL(`ai${i}Knowledge`, "field_knowledge");
+      const rAccess    = setL(`ai${i}AccessList`,"field_access");
+
+      // Re-emit on enabled checkbox change
+      const enabledInput = rEnabled?.querySelector(`input[name="${MODULE_ID}.ai${i}Enabled"]`);
+      if (enabledInput) enabledInput.addEventListener("change", () => emitPolyglotUpdate());
+
+      labelHint(rPrompt, t("hint_personality"));
+      labelHint(rKnow,   t("hint_knowledge"));
+
+      attachCounters(i, rPrompt, rKnow);
+
+      const polyRow = setL(`ai${i}PolyglotLang`, "field_polyglot");
+      if (polyRow) {
+        polyRow.style.display = polyglotActive ? "" : "none";
+        labelHint(polyRow, t("hint_polyglot"));
+      }
+
+      setL(`ai${i}IgnoreSpeaker`, "field_ignoreSpeaker", "hintIgnore");
     }
+
+    // Populate polyglot selects with handshake-provided list (or fallback)
+    __NOVA_applyPolyglotChoices(scope);
   }
 
   Hooks.on("renderSettingsConfig", (app, html) => {
-    if (!game.user?.isGM) return; // players won't see the category at all now
+    if (!game.user?.isGM) return;
     const scope = html[0];
     try {
-      for (let i = 1; i <= 8; i++) {
-        ensureHeader(scope, i);
-      }
-      localizeRegisteredRows(scope);
+      for (let i = 1; i <= 8; i++) header(scope, i);
+      localize(scope);
     } catch (e) { console.error("NOVA | UI inject error", e); }
   });
-
-  Hooks.on("novaRelocalize", () => {
-    const dlg = document.querySelector(".app.window-app .window-content");
-    if (dlg) localizeRegisteredRows(dlg);
-  });
 })();
+
+/* ---------- Polyglot update emitter (patched) ---------- */
+function emitPolyglotUpdate() {
+  try {
+    const bySlot = {};
+    for (let i = 1; i <= 8; i++) {
+      const enabled = !!game.settings.get(MODULE_ID, `ai${i}Enabled`);
+      const lang = (game.settings.get(MODULE_ID, `ai${i}PolyglotLang`) || "none").trim();
+      if (enabled && lang && !/^(-+)?\s*none/i.test(lang)) {
+        bySlot[String(i)] = lang; // simple string per slot
+      }
+    }
+    const any = Object.keys(bySlot).length > 0;
+    Hooks.callAll("nova-polyglot:update", { enabled: any, bySlot });
+  } catch (e) {
+    console.warn("NOVA | emitPolyglotUpdate failed:", e);
+  }
+}
+
 
 /* ---------- tiny helpers ---------- */
 function pickFirstVoiceId() {
@@ -949,3 +1103,16 @@ function pickFirstVoiceId() {
   }
   return "";
 }
+
+// Auto-emit when any AI Enabled or Polyglot language changes in settings
+(function __NOVA_wirePolyglotAutoEmit(){
+  try {
+    function __NOVA_polyglotAutoEmit(ev){
+      const t = ev && ev.target;
+      if (!t || !t.name) return;
+      if (!/^nova-multiai\.ai(\d+)(Enabled|PolyglotLang)$/.test(t.name)) return;
+      try { emitPolyglotUpdate(); } catch (e) { console.warn(e); }
+    }
+    document.addEventListener('change', __NOVA_polyglotAutoEmit, true);
+  } catch(e){ /* ignore */ }
+})();
