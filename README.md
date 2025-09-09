@@ -228,7 +228,7 @@ Duplicate these to impersonate other AIs (change `Nova` to another trigger).
 
 ---
 
-### Adding AI Portraits
+## Adding AI Portraits
 
 To display a portrait for each AI in chat:
 
