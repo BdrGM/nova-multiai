@@ -5,6 +5,37 @@ This project follows **semver**. Dates are in YYYY‑MM‑DD.
 
 ---
 
+## [0.3.0] — Polyglot integration 2025-09-09
+
+### Highlights
+- **Native Polyglot support.** Chat output now respects Polyglot’s selected language: it wraps chat with glyphs and sends a *fantasy-sounding* version to TTS while GM can still see/read the original. This keeps “what players see” and “what they hear” in sync with language lore.
+
+### Added
+- **Polyglot integration toggle** in settings.
+- **Fantasy language transformations** for all Polyglot languages (plus custom ones you add). Text is transformed *before* it’s sent to ElevenLabs so the audio uses the fantasy style—not plain English.
+- **Voice mapping support**: choose a default TTS voice and per-language overrides (optional).  
+- **Fallback language** used when no Polyglot language is set.
+
+### Changed
+- **Chat hook** upgraded to `renderChatMessageHTML` for better compatibility with Foundry v13+.
+- **Language dropdown** population made resilient to UI language changes (rebuilds without duplicating or losing entries).
+
+### Fixed
+- Resolved cases where the **GM did not see glyph overlays** while players did.
+- Ensured **fantasy-style audio** is produced (no more plain-English passthrough to ElevenLabs when a Polyglot language is active).
+- Eliminated an intermittent **settings render error** related to language selector wiring.
+
+### Compatibility
+- **Foundry VTT:** v13 (minimum & verified).
+- **Requires:** `socketlib` ≥ 1.1.3 for TTS broadcast.
+- **Recommends:** `polyglot` (languages) and `chat-portrait` (names/portraits).
+- **Systems:** Lightly tested on **PF2e**; other systems unverified.
+
+### Notes
+- Core deprecation warnings you may see in the console (e.g., V1 Application framework) are from systems/modules outside this project and are **not** caused by this module.
+
+---
+
 ## [0.2.3] – 2025-09-08
 
 ## Changed
