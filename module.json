@@ -1,18 +1,24 @@
 {
   "id": "nova-multiai",
   "title": "NOVA Multi-AI (Chat + TTS)",
-  "description": "Multi-AI chat with TTS broadcast, whisper routing, and GM controls.",
-  "version": "0.2.3",
+  "description": "Multi-AI chat with TTS broadcast, whisper routing, GM controls, and optional Polyglot integration.",
+  "version": "0.3.0",
+
   "compatibility": { "minimum": "13", "verified": "13" },
   "authors": [{ "name": "BdrGM" }],
   "license": "MIT",
 
-  "esmodules": ["main.js"],
+  "esmodules": [
+    "main.js",
+    "addons/nova-polyglot.js"
+  ],
   "socket": true,
 
   "url": "https://github.com/BdrGM/nova-multiai",
   "manifest": "https://raw.githubusercontent.com/BdrGM/nova-multiai/main/module.json",
-  "download": "https://github.com/BdrGM/nova-multiai/releases/download/v0.2.3/nova-multiai-v0.2.3.zip",
+  "download": "https://github.com/BdrGM/nova-multiai/releases/download/v0.3.0/nova-multiai-v0.3.0.zip",
+  "readme": "https://raw.githubusercontent.com/BdrGM/nova-multiai/main/README.md",
+  "changelog": "https://raw.githubusercontent.com/BdrGM/nova-multiai/main/CHANGELOG.md",
 
   "relationships": {
     "requires": [
@@ -30,6 +36,12 @@
         "type": "module",
         "manifest": "https://raw.githubusercontent.com/ShoyuVanilla/FoundryVTT-Chat-Portrait/master/module.json",
         "reason": "Shows AI portrait/name in chat bubbles."
+      },
+      {
+        "id": "polyglot",
+        "type": "module",
+        "manifest": "https://raw.githubusercontent.com/League-of-Foundry-Developers/fvtt-module-polyglot/master/module.json",
+        "reason": "Optional: display AI replies using in-world languages (PF2e, D&D5e, and other systems)."
       }
     ]
   }
