@@ -264,12 +264,12 @@ NOVA can rewrite AI chat into fantasy languages and glyphs using the Polyglot mo
 - Players: See glyphs or translated text based on their Polyglot settings/known languages.
 - TTS pipeline: NOVA transforms the text into its fantasy language variant first, then sends that to your TTS provider so the audio matches the chosen language style.
 
-###Notes
+### Notes
 
 - If Polyglot is disabled or the language is set to Common/Taldane, NOVA falls back to plain text + normal voice.
 - This feature has been lightly tested on PF2e so far.
 
-###Troubleshooting
+### Troubleshooting
 
 - If the language dropdown doesn’t appear, make sure Polyglot is enabled and reload the game once.
 - If switching the Foundry UI language makes the wrong dropdown appear, reopen Module Settings and reselect your fantasy language.
