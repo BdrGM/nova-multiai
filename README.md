@@ -319,6 +319,8 @@ NOVA can rewrite AI chat into fantasy languages and glyphs using the Polyglot mo
    _This project is not affiliated with or endorsed by OpenAI._
    
 - **Chat Portrait** by p4535992 (recommended)
+
+- Credit: Fantasy-language glyphs & comprehension are powered by Polyglot (by @mclemente)(recommended)
    
 - **ElevenLabs** for TTS (optional)
   _This project is not affiliated with or endorsed by ElevenLabs._
