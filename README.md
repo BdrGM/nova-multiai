@@ -241,6 +241,42 @@ To display a portrait for each AI in chat:
 
 ---
 
+## Polyglot Integration (optional)
+
+NOVA can rewrite AI chat into fantasy languages and glyphs using the Polyglot module, and also send that stylized text to TTS so speech “sounds” like the chosen language.
+
+### Requirements
+
+- Install and enable Polyglot.
+- Install and enable SocketLib (already required by NOVA).
+
+### Setup
+
+- Open Settings → Module Settings → NOVA Multi-AI.
+- Enable Polyglot integration (fantasy language mode).
+- Choose a Fantasy Language from the dropdown (e.g., Aklo, Draconic, Skald, etc.).
+- (Optional) Set Per-Actor/Per-Voice choices if you use multiple AIs.
+- Save settings.
+
+### How it works
+
+- GM view: Chat is shown in glyphs (per Polyglot rules); GM still sees/controls translation as usual.
+- Players: See glyphs or translated text based on their Polyglot settings/known languages.
+- TTS pipeline: NOVA transforms the text into its fantasy language variant first, then sends that to your TTS provider so the audio matches the chosen language style.
+
+###Notes
+
+- If Polyglot is disabled or the language is set to Common/Taldane, NOVA falls back to plain text + normal voice.
+- This feature has been lightly tested on PF2e so far.
+
+###Troubleshooting
+
+- If the language dropdown doesn’t appear, make sure Polyglot is enabled and reload the game once.
+- If switching the Foundry UI language makes the wrong dropdown appear, reopen Module Settings and reselect your fantasy language.
+- If TTS sounds “plain,” verify Polyglot integration is enabled and a non-Common language is selected.
+
+---
+
 ## Tips & Best Practices
 
 - Keep **Prompts** focused; put world facts in **Knowledge Notes**.
